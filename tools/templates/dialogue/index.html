@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% set active = 'dialogue' %}
+{% block title %}Dialogue — Galatea{% endblock %}
+{% block content %}
+<main style="padding:1.5rem;max-width:600px">
+  <h2>Dialogue Tester</h2>
+  <p style="color:var(--pico-muted-color)">
+    Start a conversation with any T1+ NPC. Sessions persist in memory until reset.
+    Calls are logged to the <a href="/prompts/">Prompt Inspector</a>.
+  </p>
+  <table>
+    <thead><tr><th>NPC</th><th>Role</th><th>Tier</th><th>Zone</th><th></th></tr></thead>
+    <tbody>
+      {% for npc in npcs %}
+      <tr>
+        <td><strong>{{ npc.name }}</strong></td>
+        <td>{{ npc.role }}</td>
+        <td><span class="badge badge-tier{{ npc.tier }}">T{{ npc.tier }}</span></td>
+        <td><small>{{ npc.current_zone_id }}</small></td>
+        <td>
+          <a href="/dialogue/{{ npc.id }}" role="button"
+             style="padding:0.2rem 0.75rem;font-size:0.8rem">
+            Chat
+          </a>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="empty">No eligible NPCs (need T1+ with a zone).</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</main>
+{% endblock %}

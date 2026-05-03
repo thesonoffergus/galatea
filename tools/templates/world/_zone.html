@@ -1,0 +1,119 @@
+<h2>{{ zone.name }} <small style="font-weight:400;font-size:0.6em;color:var(--pico-muted-color)">{{ zone.id }}</small></h2>
+<p style="margin:0 0 0.75rem"><small>Terrain: <strong>{{ zone.terrain_type }}</strong></small></p>
+
+<p class="section-label">Effective Tags</p>
+<div class="tag-cloud">
+  {% for tag in effective_tags %}
+  <span class="badge badge-tag">{{ tag }}</span>
+  {% else %}
+  <span class="empty">none</span>
+  {% endfor %}
+</div>
+
+{% if zone.properties %}
+<p class="section-label">Properties</p>
+<table>
+  <tbody>
+    {% for k, v in zone.properties.items() %}
+    <tr><td>{{ k }}</td><td>{{ v.value }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if zone.features %}
+<p class="section-label">Features</p>
+<table>
+  <thead><tr><th>Name</th><th>Tags</th><th>Quality</th></tr></thead>
+  <tbody>
+    {% for f in zone.features %}
+    <tr>
+      <td>{{ f.name }}</td>
+      <td>
+        {% for tag in f.tags %}<span class="badge badge-tag">{{ tag }}</span> {% endfor %}
+      </td>
+      <td>{{ "%.2f"|format(f.quality) if f.quality is not none else "—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if items %}
+<p class="section-label">Items ({{ items|length }})</p>
+<table>
+  <thead><tr><th>Name</th><th>Type</th><th>Qty</th><th>Quality</th><th>Owner</th></tr></thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.name }}</td>
+      <td><code>{{ item.item_type }}</code></td>
+      <td>{{ item.quantity }}</td>
+      <td>{{ "%.2f"|format(item.quality) if item.quality is not none else "—" }}</td>
+      <td>{{ item.owner_id or "—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if npcs %}
+<p class="section-label">NPCs ({{ npcs|length }})</p>
+<ul class="action-list">
+  {% for npc in npcs %}
+  <li>
+    <a href="/npc/{{ npc.id }}" hx-get="/npc/{{ npc.id }}" hx-target="#detail-pane">
+      <strong>{{ npc.name }}</strong>
+    </a>
+    — {{ npc.role }}
+    <span class="badge badge-tier{{ npc.tier }}">T{{ npc.tier }}</span>
+    {% if npc.is_player %}<span class="badge badge-player">player</span>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<p class="section-label">Graph</p>
+<table>
+  <tbody>
+    <tr>
+      <td>Parent</td>
+      <td>
+        {% if parent %}
+        <a href="/world/{{ parent.id }}" hx-get="/world/{{ parent.id }}" hx-target="#detail-pane">{{ parent.name }}</a>
+        {% else %}—{% endif %}
+      </td>
+    </tr>
+    <tr>
+      <td>Children</td>
+      <td>
+        {% if children %}
+          {% for c in children %}
+          <a href="/world/{{ c.id }}" hx-get="/world/{{ c.id }}" hx-target="#detail-pane">{{ c.name }}</a>{% if not loop.last %}, {% endif %}
+          {% endfor %}
+        {% else %}—{% endif %}
+      </td>
+    </tr>
+    <tr>
+      <td>Connections</td>
+      <td>
+        {% if connections %}
+          {% for c in connections %}
+          <a href="/world/{{ c.id }}" hx-get="/world/{{ c.id }}" hx-target="#detail-pane">{{ c.name }}</a>{% if not loop.last %}, {% endif %}
+          {% endfor %}
+        {% else %}—{% endif %}
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<p class="section-label">Available Actions ({{ available_actions|length }})</p>
+{% if available_actions %}
+<ul class="action-list">
+  {% for action in available_actions %}
+  <li><strong>{{ action.id }}</strong> <span class="badge badge-tag">{{ action.category }}</span> — {{ action.name }}</li>
+  {% endfor %}
+</ul>
+{% else %}
+<span class="empty">None (zone-only check, no actor)</span>
+{% endif %}

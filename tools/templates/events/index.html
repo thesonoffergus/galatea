@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% set active = 'events' %}
+{% block title %}Event Log{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:220px 1fr;gap:0;height:calc(100vh - 52px);overflow:hidden">
+
+  <aside style="overflow-y:auto;border-right:1px solid var(--pico-muted-border-color);padding:1rem">
+    <h3 style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--pico-muted-color);margin-bottom:0.5rem">Filters</h3>
+
+    <form method="get" action="/events/" style="display:flex;flex-direction:column;gap:0.5rem">
+
+      <label style="font-size:0.75rem;color:var(--pico-muted-color)">Event type
+        <select name="type" style="font-size:0.8rem;margin-top:0.15rem">
+          <option value="">All types</option>
+          {% for t in all_types %}
+          <option value="{{ t }}" {% if q_type == t %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label style="font-size:0.75rem;color:var(--pico-muted-color)">Min severity
+        <select name="severity" style="font-size:0.8rem;margin-top:0.15rem">
+          <option value="">Any</option>
+          {% for s in all_severities %}
+          <option value="{{ s }}" {% if q_severity == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label style="font-size:0.75rem;color:var(--pico-muted-color)">NPC
+        <select name="npc" style="font-size:0.8rem;margin-top:0.15rem">
+          <option value="">Any NPC</option>
+          {% for npc in npcs %}
+          <option value="{{ npc.id }}" {% if q_npc == npc.id %}selected{% endif %}>{{ npc.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label style="font-size:0.75rem;color:var(--pico-muted-color)">Tag
+        <select name="tag" style="font-size:0.8rem;margin-top:0.15rem">
+          <option value="">Any tag</option>
+          {% for t in all_tags %}
+          <option value="{{ t }}" {% if q_tag == t %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label style="font-size:0.75rem;color:var(--pico-muted-color)">Zone ID
+        <input type="text" name="zone" value="{{ q_zone }}"
+               placeholder="zone_id" style="font-size:0.8rem;margin-top:0.15rem">
+      </label>
+
+      <button type="submit" style="font-size:0.8rem;padding:0.25rem 0.5rem">Apply</button>
+      <a href="/events/" style="font-size:0.75rem;text-align:center;color:var(--pico-muted-color)">Clear filters</a>
+    </form>
+
+    <p style="margin-top:1rem;font-size:0.75rem;color:var(--pico-muted-color)">
+      {{ total_logged }} total recorded
+    </p>
+  </aside>
+
+  <main style="overflow-y:auto;padding:1.25rem 1.5rem">
+    <h2 style="margin-top:0">
+      Event Log
+      <small style="font-weight:400;font-size:0.8rem;color:var(--pico-muted-color)">({{ entries|length }} shown)</small>
+    </h2>
+
+    {% if entries %}
+    <table style="font-size:0.8rem">
+      <thead>
+        <tr>
+          <th style="width:140px">Time</th>
+          <th style="width:120px">Type</th>
+          <th style="width:80px">Severity</th>
+          <th>Description</th>
+          <th>NPCs</th>
+          <th>Zone</th>
+          <th>Tags</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in entries %}
+        <tr>
+          <td style="white-space:nowrap;color:var(--pico-muted-color);font-size:0.75rem">
+            {{ e.timestamp.strftime("%H:%M:%S") }}
+          </td>
+          <td>
+            <span class="badge badge-tag">{{ e.event_type }}</span>
+          </td>
+          <td>
+            {% set sev_colors = {"trivial": "#555", "minor": "#7eaaf7", "moderate": "#f7c87e", "major": "#f7a07e", "critical": "#f77e7e"} %}
+            <span style="font-size:0.72rem;font-weight:600;color:{{ sev_colors.get(e.severity, '#ccc') }}">
+              {{ e.severity }}
+            </span>
+          </td>
+          <td>
+            {{ e.description }}
+            {% if e.payload %}
+            <details style="margin-top:0.2rem">
+              <summary style="font-size:0.72rem;color:var(--pico-muted-color)">payload</summary>
+              <pre style="font-size:0.72rem;margin:0.2rem 0 0;padding:0.3rem;background:var(--pico-card-background-color);border-radius:4px">{% for k, v in e.payload.items() %}{{ k }}: {{ v }}
+{% endfor %}</pre>
+            </details>
+            {% endif %}
+          </td>
+          <td style="font-size:0.75rem">
+            {% for r in e.npc_roles %}
+            <a href="/npc/{{ r.npc_id }}" style="display:block">
+              {{ r.npc_id }}<span style="color:var(--pico-muted-color)"> ({{ r.role }})</span>
+            </a>
+            {% endfor %}
+          </td>
+          <td style="font-size:0.75rem">
+            {% if e.zone_id %}
+            <a href="/world/{{ e.zone_id }}">{{ e.zone_id }}</a>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% for t in e.tags %}
+            <a href="/events/?tag={{ t }}">
+              <span class="badge badge-tag">{{ t }}</span>
+            </a>
+            {% endfor %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">No events recorded yet{% if q_type or q_npc or q_zone or q_tag or q_severity %} matching these filters{% endif %}.</p>
+    {% endif %}
+  </main>
+
+</div>
+{% endblock %}

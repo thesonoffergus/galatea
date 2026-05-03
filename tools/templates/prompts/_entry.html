@@ -1,0 +1,46 @@
+<div style="display:flex;gap:1rem;align-items:baseline;margin-bottom:0.5rem">
+  <h3 style="margin:0">Call <code>{{ entry.id }}</code></h3>
+  <small style="color:var(--pico-muted-color)">{{ entry.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC') }}</small>
+</div>
+
+<table style="font-size:0.8rem;margin-bottom:1rem">
+  <tbody>
+    <tr><td>Runner</td><td><strong>{{ entry.runner_id }}</strong></td></tr>
+    <tr><td>Model</td><td><code>{{ entry.model }}</code></td></tr>
+    <tr><td>Tokens</td><td>{{ entry.prompt_tokens }} prompt + {{ entry.completion_tokens }} completion</td></tr>
+    <tr><td>Duration</td><td>{{ "%.0f"|format(entry.duration_ms) }} ms</td></tr>
+    {% if entry.tags %}
+    <tr>
+      <td>Tags</td>
+      <td>
+        {% for t in entry.tags|sort %}
+        <span class="badge badge-tag">{{ t }}</span>
+        {% endfor %}
+      </td>
+    </tr>
+    {% endif %}
+    {% if entry.error %}
+    <tr><td>Error</td><td style="color:#f77e7e">{{ entry.error }}</td></tr>
+    {% endif %}
+  </tbody>
+</table>
+
+<p class="section-label">Messages</p>
+{% for msg in entry.messages %}
+<article style="margin-bottom:0.5rem;padding:0.6rem 0.9rem">
+  <header style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--pico-muted-color);padding-bottom:0.3rem">
+    {{ msg.role }}
+  </header>
+  <pre style="white-space:pre-wrap;word-break:break-word;margin:0;font-size:0.8rem">{{ msg.content }}</pre>
+</article>
+{% endfor %}
+
+{% if entry.response and not entry.error %}
+<p class="section-label">Response</p>
+<article style="border:1px solid #2a4a2a;padding:0.6rem 0.9rem">
+  <header style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:#7ef7a8;padding-bottom:0.3rem">
+    assistant
+  </header>
+  <pre style="white-space:pre-wrap;word-break:break-word;margin:0;font-size:0.8rem;color:#c8f7c8">{{ entry.response }}</pre>
+</article>
+{% endif %}

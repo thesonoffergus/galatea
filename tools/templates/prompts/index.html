@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% set active = 'prompts' %}
+{% block title %}Prompt Inspector — Galatea{% endblock %}
+{% block content %}
+<div class="layout">
+  <aside class="sidebar">
+    <form method="get" action="/prompts/" style="margin-bottom:0.75rem">
+      <select name="tag" onchange="this.form.submit()" style="font-size:0.8rem;padding:0.25rem 0.5rem;margin:0">
+        {% for opt in tag_options %}
+        <option value="{{ opt }}" {% if tag == opt %}selected{% endif %}>
+          {% if opt %}{{ opt }}{% else %}All calls{% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </form>
+    <h3>Recent ({{ entries|length }})</h3>
+    <ul>
+      {% for e in entries %}
+      <li>
+        <a href="/prompts/{{ e.id }}?tag={{ tag }}"
+           {% if selected and selected.id == e.id %}class="active"{% endif %}
+           hx-get="/prompts/{{ e.id }}"
+           hx-target="#detail-pane"
+           hx-push-url="true">
+          <small style="color:var(--pico-muted-color)">{{ e.timestamp.strftime('%H:%M:%S') }}</small>
+          <span class="badge badge-tag">{{ e.runner_id }}</span>
+          {% if e.error %}<span style="color:#f77e7e">✗</span>{% endif %}
+          <br>
+          <span style="font-size:0.75rem;color:var(--pico-muted-color)">
+            {{ (e.response[:60] + "…") if e.response|length > 60 else e.response }}
+          </span>
+        </a>
+      </li>
+      {% else %}
+      <li class="empty">No prompt calls recorded yet.</li>
+      {% endfor %}
+    </ul>
+  </aside>
+  <main id="detail-pane" class="detail-pane">
+    {% if selected %}
+      {% include "prompts/_entry.html" %}
+    {% else %}
+      <div class="placeholder">
+        Prompt calls appear here after an LLM is invoked.<br>
+        <small style="color:var(--pico-muted-color)">Select an entry from the list.</small>
+      </div>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}

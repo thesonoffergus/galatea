@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% set active = 'seed' %}
+{% block title %}Scenarios — Galatea{% endblock %}
+{% block content %}
+<main style="padding:1.5rem;max-width:800px">
+  <h2>Scenario Seeding</h2>
+  <p style="color:var(--pico-muted-color)">
+    Load a world seed YAML to populate all inspectors. Bootstrap validation
+    runs automatically on every load.
+  </p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start">
+
+    <section>
+      <article>
+        <header><strong>Currently loaded</strong></header>
+        <code>{{ state.seed_path.name }}</code>
+        <p style="margin:0.5rem 0 0;font-size:0.85rem;color:var(--pico-muted-color)">
+          {{ state.graph.zone_count() }} zones · {{ state.npc_registry|length }} NPCs
+        </p>
+      </article>
+
+      <div id="reload-status">
+        {% if message %}
+        <p class="{% if ok %}msg-success{% else %}msg-error{% endif %}">{{ message }}</p>
+        {% endif %}
+      </div>
+
+      <h3>Available Seeds</h3>
+      <table>
+        <thead><tr><th>File</th><th></th></tr></thead>
+        <tbody>
+          {% for seed in state.available_seeds() %}
+          <tr>
+            <td>
+              <strong>{{ seed.name }}</strong><br>
+              <small style="color:var(--pico-muted-color)">{{ seed.parent }}</small>
+            </td>
+            <td>
+              <form method="post" action="/seed/reload"
+                    hx-post="/seed/reload"
+                    hx-target="#reload-status"
+                    style="margin:0">
+                <input type="hidden" name="seed_path" value="{{ seed }}">
+                <button type="submit"
+                        style="padding:0.2rem 0.75rem;margin:0;font-size:0.8rem"
+                        {% if state.seed_path == seed %}disabled{% endif %}>
+                  {% if state.seed_path == seed %}Loaded{% else %}Load{% endif %}
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="2" class="empty">No seed files found in data/.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+        <h3 style="margin:0">Bootstrap Validation</h3>
+        <button style="padding:0.2rem 0.75rem;font-size:0.8rem;margin:0"
+                hx-get="/seed/validate"
+                hx-target="#bootstrap-result"
+                hx-indicator="#bootstrap-spinner">
+          Re-run
+          <span id="bootstrap-spinner" class="htmx-indicator" style="font-size:0.75rem"> ⟳</span>
+        </button>
+      </div>
+      <article id="bootstrap-result">
+        {% set result = state.bootstrap_result %}
+        {% include "seed/_bootstrap.html" %}
+      </article>
+    </section>
+
+  </div>
+</main>
+{% endblock %}

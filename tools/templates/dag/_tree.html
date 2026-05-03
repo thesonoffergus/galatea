@@ -1,0 +1,32 @@
+{% macro render_node(node) %}
+<details open>
+  <summary>
+    <strong>{{ node.item_type }}</strong>
+    {% if node.gatherable %}<span class="badge badge-gatherable">gatherable</span>{% endif %}
+    {% if node.craftable %}<span class="badge badge-craftable">craftable</span>{% endif %}
+    {% if node.cycle_ref %}<em style="color:var(--pico-muted-color)"> (cycle)</em>{% endif %}
+  </summary>
+  {% if not node.cycle_ref %}
+  {% if node.produced_by %}
+  <p style="margin:0.25rem 0 0.25rem 1rem;font-size:0.8rem;color:var(--pico-muted-color)">
+    Produced by:
+    {% for a in node.produced_by %}<code>{{ a }}</code>{% if not loop.last %}, {% endif %}{% endfor %}
+  </p>
+  {% endif %}
+  {% if node.requires %}
+  <div class="tree-node">
+    {% for child in node.requires %}
+    {{ render_node(child) }}
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="margin:0.25rem 0 0.25rem 1rem;font-size:0.8rem;color:var(--pico-muted-color)">
+    <em>No dependencies (raw material or gatherable)</em>
+  </p>
+  {% endif %}
+  {% endif %}
+</details>
+{% endmacro %}
+
+<h3>Dependency tree: <code>{{ item_type }}</code></h3>
+{{ render_node(tree) }}

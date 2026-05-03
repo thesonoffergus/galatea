@@ -1,0 +1,101 @@
+# Tag vocabulary — single source of truth.
+# Adding a tag is cheap. Renaming one is not. Commit early.
+#
+# Format: tag_name: description
+# Tags are plain strings; this file exists to document intent and prevent drift.
+
+# ── Environment ────────────────────────────────────────────────────────────────
+outdoor: "Zone is outdoors (sky visible)"
+indoor: "Zone is inside a structure"
+underground: "Zone is below ground"
+wilderness: "Zone is undeveloped wilderness"
+settlement: "Zone is part of an inhabited settlement"
+road: "Zone is a road or established path"
+
+# ── Terrain / geography ────────────────────────────────────────────────────────
+water_source: "Zone contains or is adjacent to a usable water supply"
+forest: "Zone contains significant tree cover"
+river: "Zone has a river running through or adjacent"
+hill: "Zone is elevated terrain"
+marsh: "Zone has marshy or boggy ground"
+farm: "Zone is cultivated agricultural land"
+mine: "Zone is or contains a mine shaft"
+
+# ── Resource availability ──────────────────────────────────────────────────────
+fish_population: "Zone supports fishing activity"
+ore_deposit: "Zone contains mineable ore"
+stone_deposit: "Zone contains quarriable stone"
+clay_deposit: "Zone contains harvestable clay"
+timber: "Zone has harvestable timber"
+wild_herbs: "Zone has gatherable wild herbs"
+wild_berries: "Zone has gatherable berries"
+game_animals: "Zone has huntable game"
+
+# ── Crafting infrastructure ────────────────────────────────────────────────────
+heat_source: "Zone contains a heat source suitable for metalworking or cooking"
+anvil: "Zone contains an anvil for smithing"
+forge: "Zone contains a working forge"
+bellows: "Zone contains working bellows (required for forge heat)"
+tool_storage: "Zone has tool storage (workbench, rack, etc.)"
+workbench: "Zone contains a workbench for carpentry or general crafting"
+millstone: "Zone contains a millstone for grinding grain"
+grain_storage: "Zone has grain storage capacity"
+tannery_vat: "Zone contains tanning vats for leatherworking"
+brewing_vessel: "Zone has vessels suitable for brewing"
+cooking_fire: "Zone contains a cooking fire or oven"
+loom: "Zone contains a loom for weaving"
+kiln: "Zone contains a kiln for firing pottery or bricks"
+air_supply: "Zone has adequate air circulation for combustion (e.g. bellows present)"
+
+# ── Trade and commerce ─────────────────────────────────────────────────────────
+market: "Zone is a market or has active trading"
+storage: "Zone has storage space (general goods)"
+goods_for_sale: "Zone has goods available for purchase"
+
+# ── Social / access ────────────────────────────────────────────────────────────
+public: "Zone is publicly accessible"
+private: "Zone is privately owned and access-controlled"
+sacred: "Zone has religious or ceremonial significance"
+inn: "Zone is an inn or offers lodging"
+tavern: "Zone serves food and drink"
+
+# ── Ownership markers ─────────────────────────────────────────────────────────
+owned: "Zone has at least one owner"
+owned_by_authority: "Zone is owned by a governing authority (village council, lord, etc.)"
+
+# ── Conditions ────────────────────────────────────────────────────────────────
+well_maintained: "Zone is actively maintained and in good repair"
+neglected: "Zone shows signs of disuse or neglect"
+locked: "Zone access is currently restricted"
+occupied: "Zone has at least one NPC currently present"
+
+# ── Item tags ─────────────────────────────────────────────────────────────────
+raw_material: "Item is a raw/unprocessed material"
+refined_material: "Item has been processed from raw materials"
+tool: "Item is a tool used in crafting or gathering"
+weapon: "Item is a weapon"
+armor: "Item is armor or protective gear"
+food: "Item is edible"
+medicine: "Item has medicinal properties"
+ingredient: "Item is a crafting ingredient"
+fuel: "Item can be used as fuel"
+trade_good: "Item is primarily useful as a trade good"
+herb: "Item is an herb or plant-based ingredient"
+ore: "Item is a metal ore or related mineral"
+wood: "Item is wood or a wood-based material"
+hide: "Item is an animal hide or leather"
+fiber: "Item is a textile fiber (wool, flax, etc.)"
+grain: "Item is an agricultural grain"
+container: "Item can hold other items or liquids"
+
+# ── Action tags (on the action itself, not zones) ─────────────────────────────
+craft: "Action produces a crafted object"
+gather: "Action harvests raw materials from the environment"
+social: "Action is a social interaction"
+movement: "Action moves an actor between zones"
+violent: "Action involves physical force or harm"
+private: "Action is expected to occur privately"
+requires_consent: "Action requires consent of another party"
+loud: "Action generates significant noise"
+teaches: "Action transfers knowledge to another"
+economic: "Action involves exchange of goods or currency"

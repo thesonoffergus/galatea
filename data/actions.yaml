@@ -1,0 +1,650 @@
+# Starter action registry — 18 actions covering all feature surfaces.
+#
+# Precondition types: nearby_tag, zone_has_tag, actor_has_item, zone_has_item,
+#   actor_skill, actor_knows_recipe, npc_present, zone_accessible, and, or, not
+# Effect types: produces, consumes, advances_skill, time_cost, noise,
+#   teaches_recipe, moves_actor, relationship
+#
+# Item types referenced (full product DAG derivable from these):
+#   Raw materials (gatherable):
+#     iron_ore, wood_log, herb, herb_toxic, herb_common, berry, berry_toxic,
+#     raw_fish, water, grain
+#   Processed materials:
+#     iron_ingot, leather, flour
+#   Finished goods:
+#     sword, axe, tool, knife, potion, bread, rope
+#   Misc:
+#     raw_hide (no gathering action yet — obtained from hunting, future)
+
+actions:
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # GATHERING
+  # ══════════════════════════════════════════════════════════════════════════
+
+  - id: chop_wood
+    name: "Chop Wood"
+    description: >
+      Cut timber from trees in the area. Any able-bodied person can chop wood;
+      having an axe improves yield and speed.
+    category: gathering
+    tags: [gather, loud]
+    preconditions:
+      type: nearby_tag
+      tag: timber
+    effects:
+      - type: produces
+        item_type: wood_log
+        quantity: 2
+      - type: advances_skill
+        skill: woodcutting
+        amount: 0.02
+      - type: time_cost
+        game_hours: 1.0
+      - type: noise
+        level: loud
+
+  - id: gather_herbs
+    name: "Gather Herbs"
+    description: >
+      Collect herbs from the surrounding area. Low herbalism skill risks
+      gathering the wrong plant — common weeds or even toxic specimens.
+    category: gathering
+    tags: [gather]
+    preconditions:
+      type: nearby_tag
+      tag: wild_herbs
+    effects:
+      - type: produces
+        item_type: herb
+        quantity: 1
+      - type: advances_skill
+        skill: herbalism
+        amount: 0.03
+      - type: time_cost
+        game_hours: 0.5
+    confusion_table:
+      intended_output: herb
+      skill: herbalism
+      entries:
+        - output_item_type: herb_common
+          base_probability: 0.40
+          skill_elimination_threshold: 0.50
+          tag_similarity_hint: plants_same_biome
+        - output_item_type: herb_toxic
+          base_probability: 0.15
+          skill_elimination_threshold: 0.30
+          tag_similarity_hint: plants_same_biome
+
+  - id: mine_ore
+    name: "Mine Iron Ore"
+    description: >
+      Extract iron ore from rock outcrops or a mine shaft.
+      A tool (pickaxe or equivalent) is required.
+    category: gathering
+    tags: [gather, loud]
+    preconditions:
+      type: and
+      conditions:
+        - type: nearby_tag
+          tag: ore_deposit
+        - type: actor_has_item
+          item_type: tool
+          quantity: 1
+    effects:
+      - type: produces
+        item_type: iron_ore
+        quantity: 2
+      - type: advances_skill
+        skill: mining
+        amount: 0.03
+      - type: time_cost
+        game_hours: 2.0
+      - type: noise
+        level: loud
+
+  - id: fish
+    name: "Fish"
+    description: >
+      Fish in a river, lake, or pond. Patience is as important as skill.
+      Player attentiveness (when active) can improve yield.
+    category: gathering
+    tags: [gather]
+    preconditions:
+      type: nearby_tag
+      tag: fish_population
+    effects:
+      - type: produces
+        item_type: raw_fish
+        quantity: 1
+      - type: advances_skill
+        skill: fishing
+        amount: 0.02
+      - type: time_cost
+        game_hours: 1.0
+    player_skill_gate:
+      type_id: fish_pull
+      difficulty: 0.3
+
+  - id: forage_berries
+    name: "Forage Berries"
+    description: >
+      Gather wild berries from bushes. Most are safe, but some look deceptively
+      similar to toxic varieties. Higher foraging skill avoids mistakes.
+    category: gathering
+    tags: [gather]
+    preconditions:
+      type: nearby_tag
+      tag: wild_berries
+    effects:
+      - type: produces
+        item_type: berry
+        quantity: 3
+      - type: advances_skill
+        skill: foraging
+        amount: 0.02
+      - type: time_cost
+        game_hours: 0.5
+    confusion_table:
+      intended_output: berry
+      skill: foraging
+      entries:
+        - output_item_type: berry_toxic
+          base_probability: 0.20
+          skill_elimination_threshold: 0.40
+          tag_similarity_hint: plants_same_biome
+
+  - id: draw_water
+    name: "Draw Water"
+    description: "Fill a container from a well, river, or other water source."
+    category: gathering
+    tags: [gather]
+    preconditions:
+      type: nearby_tag
+      tag: water_source
+    effects:
+      - type: produces
+        item_type: water
+        quantity: 1
+      - type: time_cost
+        game_hours: 0.1
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # CRAFTING
+  # ══════════════════════════════════════════════════════════════════════════
+
+  - id: smelt_iron
+    name: "Smelt Iron"
+    description: >
+      Feed iron ore and fuel into a forge to produce iron ingots.
+      Requires a working heat source. No recipe knowledge needed — any
+      smith knows the basics of smelting.
+    category: crafting
+    tags: [craft, loud]
+    preconditions:
+      type: and
+      conditions:
+        - type: nearby_tag
+          tag: heat_source
+        - type: actor_has_item
+          item_type: iron_ore
+          quantity: 2
+        - type: actor_has_item
+          item_type: wood_log
+          quantity: 1
+    effects:
+      - type: produces
+        item_type: iron_ingot
+        quantity: 1
+      - type: consumes
+        item_type: iron_ore
+        quantity: 2
+        from_actor: true
+      - type: consumes
+        item_type: wood_log
+        quantity: 1
+        from_actor: true
+      - type: advances_skill
+        skill: smithing
+        amount: 0.02
+      - type: time_cost
+        game_hours: 2.0
+      - type: noise
+        level: moderate
+
+  - id: smith_sword
+    name: "Smith a Sword"
+    description: >
+      Shape iron ingots into a functional sword using forge and anvil.
+      Requires recipe knowledge and at least basic smithing skill.
+      The step sequence is observable — watching a smith complete this
+      action teaches the observer the recipe.
+    category: crafting
+    tags: [craft, loud]
+    preconditions:
+      type: and
+      conditions:
+        - type: nearby_tag
+          tag: heat_source
+        - type: nearby_tag
+          tag: anvil
+        - type: actor_has_item
+          item_type: iron_ingot
+          quantity: 2
+        - type: actor_skill
+          skill: smithing
+          min_value: 0.20
+        - type: actor_knows_recipe
+          recipe_id: smith_sword
+    effects:
+      - type: produces
+        item_type: sword
+        quantity: 1
+      - type: consumes
+        item_type: iron_ingot
+        quantity: 2
+        from_actor: true
+      - type: advances_skill
+        skill: smithing
+        amount: 0.06
+      - type: noise
+        level: loud
+    step_list:
+      - name: "Heat the iron"
+        description: "Bring the ingots to working temperature. Timing matters — too cool and it won't shape; too hot and it burns."
+        time_cost_hours: 0.5
+        tool_tag: heat_source
+        player_skill_gate:
+          type_id: forge_timing
+          difficulty: 0.30
+      - name: "Draw out the blade"
+        description: "Hammer the hot iron into a rough blade profile on the anvil."
+        time_cost_hours: 2.0
+        tool_tag: anvil
+        player_skill_gate:
+          type_id: hammer_rhythm
+          difficulty: 0.50
+      - name: "Refine and grind the edge"
+        description: "Work the edge geometry and grind the blade to sharpness."
+        time_cost_hours: 1.0
+        player_skill_gate:
+          type_id: edge_grinding
+          difficulty: 0.40
+      - name: "Hilt and finish"
+        description: "Attach the hilt, peen the pommel, final polish."
+        time_cost_hours: 0.5
+
+  - id: smith_axe
+    name: "Smith an Axe"
+    description: "Forge an iron axe head and fit it to a wooden haft."
+    category: crafting
+    tags: [craft, loud]
+    preconditions:
+      type: and
+      conditions:
+        - type: nearby_tag
+          tag: heat_source
+        - type: nearby_tag
+          tag: anvil
+        - type: actor_has_item
+          item_type: iron_ingot
+          quantity: 1
+        - type: actor_has_item
+          item_type: wood_log
+          quantity: 1
+        - type: actor_skill
+          skill: smithing
+          min_value: 0.15
+        - type: actor_knows_recipe
+          recipe_id: smith_axe
+    effects:
+      - type: produces
+        item_type: axe
+        quantity: 1
+      - type: consumes
+        item_type: iron_ingot
+        quantity: 1
+        from_actor: true
+      - type: consumes
+        item_type: wood_log
+        quantity: 1
+        from_actor: true
+      - type: advances_skill
+        skill: smithing
+        amount: 0.04
+      - type: time_cost
+        game_hours: 3.0
+      - type: noise
+        level: loud
+
+  - id: smith_tool
+    name: "Smith a Tool"
+    description: >
+      Forge a general-purpose iron tool (hammer, tongs, chisel, hoe, etc.).
+      Parametric on tool type — the smith and player negotiate what to make.
+    category: crafting
+    tags: [craft, loud]
+    parameters:
+      - name: tool_type
+        description: "The specific tool to produce (hammer, tongs, chisel, hoe, pickaxe, etc.)"
+        type: str
+    preconditions:
+      type: and
+      conditions:
+        - type: nearby_tag
+          tag: heat_source
+        - type: nearby_tag
+          tag: anvil
+        - type: actor_has_item
+          item_type: iron_ingot
+          quantity: 1
+        - type: actor_skill
+          skill: smithing
+          min_value: 0.10
+        - type: actor_knows_recipe
+          recipe_id: smith_tool
+    effects:
+      - type: produces
+        item_type: tool
+        quantity: 1
+      - type: consumes
+        item_type: iron_ingot
+        quantity: 1
+        from_actor: true
+      - type: advances_skill
+        skill: smithing
+        amount: 0.03
+      - type: time_cost
+        game_hours: 2.0
+      - type: noise
+        level: loud
+
+  - id: smith_knife
+    name: "Smith a Knife"
+    description: "Forge a small iron knife — utility tool and modest weapon."
+    category: crafting
+    tags: [craft, loud]
+    preconditions:
+      type: and
+      conditions:
+        - type: nearby_tag
+          tag: heat_source
+        - type: nearby_tag
+          tag: anvil
+        - type: actor_has_item
+          item_type: iron_ingot
+          quantity: 1
+        - type: actor_skill
+          skill: smithing
+          min_value: 0.05
+        - type: actor_knows_recipe
+          recipe_id: smith_knife
+    effects:
+      - type: produces
+        item_type: knife
+        quantity: 1
+      - type: consumes
+        item_type: iron_ingot
+        quantity: 1
+        from_actor: true
+      - type: advances_skill
+        skill: smithing
+        amount: 0.02
+      - type: time_cost
+        game_hours: 1.0
+      - type: noise
+        level: moderate
+
+  - id: grind_grain
+    name: "Grind Grain"
+    description: "Feed raw grain into the millstone to produce flour. Requires a working mill."
+    category: crafting
+    tags: [craft]
+    preconditions:
+      type: and
+      conditions:
+        - type: nearby_tag
+          tag: millstone
+        - type: actor_has_item
+          item_type: grain
+          quantity: 2
+    effects:
+      - type: produces
+        item_type: flour
+        quantity: 1
+      - type: consumes
+        item_type: grain
+        quantity: 2
+        from_actor: true
+      - type: advances_skill
+        skill: milling
+        amount: 0.01
+      - type: time_cost
+        game_hours: 0.5
+
+  - id: tan_hide
+    name: "Tan Hide"
+    description: >
+      Process a raw animal hide into usable leather using tanning vats or
+      a riverside bark-tanning setup. Slow process — hides must soak.
+    category: crafting
+    tags: [craft]
+    preconditions:
+      type: and
+      conditions:
+        - type: or
+          conditions:
+            - type: nearby_tag
+              tag: tannery_vat
+            - type: nearby_tag
+              tag: water_source
+        - type: actor_has_item
+          item_type: raw_hide
+          quantity: 1
+        - type: actor_knows_recipe
+          recipe_id: tan_hide
+    effects:
+      - type: produces
+        item_type: leather
+        quantity: 1
+      - type: consumes
+        item_type: raw_hide
+        quantity: 1
+        from_actor: true
+      - type: advances_skill
+        skill: tanning
+        amount: 0.04
+      - type: time_cost
+        game_hours: 8.0
+
+  - id: brew_potion
+    name: "Brew a Potion"
+    description: >
+      Combine gathered herbs in a brewing vessel to produce a potion.
+      The specific effect depends on the herbs used. Recipe knowledge
+      determines which combination the brewer attempts.
+    category: crafting
+    tags: [craft]
+    preconditions:
+      type: and
+      conditions:
+        - type: nearby_tag
+          tag: brewing_vessel
+        - type: actor_has_item
+          item_type: herb
+          quantity: 2
+        - type: actor_knows_recipe
+          recipe_id: brew_potion
+    effects:
+      - type: produces
+        item_type: potion
+        quantity: 1
+      - type: consumes
+        item_type: herb
+        quantity: 2
+        from_actor: true
+      - type: advances_skill
+        skill: brewing
+        amount: 0.04
+      - type: time_cost
+        game_hours: 2.0
+
+  - id: bake_bread
+    name: "Bake Bread"
+    description: "Mix flour with water and bake a loaf. Requires an oven or cooking fire."
+    category: crafting
+    tags: [craft]
+    preconditions:
+      type: and
+      conditions:
+        - type: or
+          conditions:
+            - type: nearby_tag
+              tag: cooking_fire
+            - type: nearby_tag
+              tag: heat_source
+        - type: actor_has_item
+          item_type: flour
+          quantity: 1
+        - type: actor_has_item
+          item_type: water
+          quantity: 1
+        - type: actor_knows_recipe
+          recipe_id: bake_bread
+    effects:
+      - type: produces
+        item_type: bread
+        quantity: 2
+      - type: consumes
+        item_type: flour
+        quantity: 1
+        from_actor: true
+      - type: consumes
+        item_type: water
+        quantity: 1
+        from_actor: true
+      - type: advances_skill
+        skill: cooking
+        amount: 0.02
+      - type: time_cost
+        game_hours: 1.0
+
+  - id: craft_rope
+    name: "Craft Rope"
+    description: >
+      Twist plant fibers into rope. No tools needed beyond one's hands,
+      but a workbench speeds the process.
+    category: crafting
+    tags: [craft]
+    preconditions:
+      type: and
+      conditions:
+        - type: actor_has_item
+          item_type: fiber
+          quantity: 3
+        - type: actor_knows_recipe
+          recipe_id: craft_rope
+    effects:
+      - type: produces
+        item_type: rope
+        quantity: 1
+      - type: consumes
+        item_type: fiber
+        quantity: 3
+        from_actor: true
+      - type: advances_skill
+        skill: crafting_general
+        amount: 0.02
+      - type: time_cost
+        game_hours: 1.0
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # SOCIAL
+  # ══════════════════════════════════════════════════════════════════════════
+
+  - id: trade
+    name: "Trade"
+    description: >
+      Negotiate an exchange of goods or currency with another person.
+      Both parties must be present. Terms are worked out through dialogue.
+    category: social
+    tags: [social, economic, requires_consent]
+    preconditions:
+      type: npc_present
+    effects:
+      - type: relationship
+        target: target
+        delta: 0.02
+      - type: time_cost
+        game_hours: 0.25
+
+  - id: teach_recipe
+    name: "Teach Recipe"
+    description: >
+      Share knowledge of a crafting recipe with another person. The teacher
+      must know the recipe themselves. The learner must be present and willing.
+    category: social
+    tags: [social, teaches, requires_consent]
+    parameters:
+      - name: recipe_id
+        description: "The recipe to teach"
+        type: recipe_id
+      - name: target_npc_id
+        description: "The NPC being taught"
+        type: npc_id
+    preconditions:
+      type: and
+      conditions:
+        - type: npc_present
+        - type: actor_knows_recipe
+          recipe_id: $param:recipe_id
+    effects:
+      - type: teaches_recipe
+        recipe_id: $param:recipe_id
+      - type: relationship
+        target: $param:target_npc_id
+        delta: 0.05
+      - type: time_cost
+        game_hours: 0.5
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # MOVEMENT
+  # ══════════════════════════════════════════════════════════════════════════
+
+  - id: travel_to
+    name: "Travel To"
+    description: >
+      Move through a passable connection to an adjacent zone.
+      The destination must be connected to the current zone.
+    category: movement
+    tags: [movement]
+    parameters:
+      - name: to_zone_id
+        description: "ID of the destination zone"
+        type: zone_id
+    preconditions:
+      type: zone_accessible
+    effects:
+      - type: moves_actor
+        to_zone: $param:to_zone_id
+      - type: time_cost
+        game_hours: 0.1
+
+  - id: enter_zone
+    name: "Enter Zone"
+    description: >
+      Enter a zone that may be privately owned or restricted.
+      Used when the actor needs to negotiate access or owns the zone.
+    category: movement
+    tags: [movement]
+    parameters:
+      - name: to_zone_id
+        description: "ID of the zone to enter"
+        type: zone_id
+    preconditions:
+      type: zone_accessible
+    effects:
+      - type: moves_actor
+        to_zone: $param:to_zone_id
+      - type: time_cost
+        game_hours: 0.05

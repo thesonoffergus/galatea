@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% set active = 'dag' %}
+{% block title %}Product DAG — Galatea{% endblock %}
+{% block content %}
+<div class="layout">
+  <aside class="sidebar">
+    <h3>Craftable</h3>
+    <ul>
+      {% for item_type, flags in items.items() if flags.craftable %}
+      <li>
+        <a href="/dag/{{ item_type }}"
+           {% if selected_item == item_type %}class="active"{% endif %}
+           hx-get="/dag/{{ item_type }}"
+           hx-target="#detail-pane"
+           hx-push-url="true">
+          {{ item_type }}
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    <h3 style="margin-top:1rem">Gatherable</h3>
+    <ul>
+      {% for item_type, flags in items.items() if flags.gatherable and not flags.craftable %}
+      <li>
+        <a href="/dag/{{ item_type }}"
+           {% if selected_item == item_type %}class="active"{% endif %}
+           hx-get="/dag/{{ item_type }}"
+           hx-target="#detail-pane"
+           hx-push-url="true">
+          {{ item_type }}
+          <span class="badge badge-gatherable">g</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </aside>
+  <main id="detail-pane" class="detail-pane">
+    {% if tree %}
+      {% include "dag/_tree.html" %}
+    {% else %}
+      <div class="placeholder">Select an item to view its dependency tree.</div>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}

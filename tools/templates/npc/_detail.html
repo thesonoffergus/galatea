@@ -1,0 +1,231 @@
+<h2>
+  {{ npc.name }}
+  <span class="badge badge-tier{{ npc.tier }}">T{{ npc.tier }}</span>
+  {% if npc.is_player %}<span class="badge badge-player">player</span>{% endif %}
+</h2>
+<p style="margin:0 0 0.5rem">
+  <small>
+    <code>{{ npc.id }}</code> · Role: <strong>{{ npc.role }}</strong>
+    · Zone: {% if current_zone %}<a href="/world/{{ current_zone.id }}" hx-get="/world/{{ current_zone.id }}" hx-target="#detail-pane">{{ current_zone.name }}</a>{% else %}—{% endif %}
+    · Mood: {{ "%.2f"|format(npc.mood) }}
+    · Reach: <span id="reach-{{ npc.id }}"
+        hx-get="/tier/{{ npc.id }}/score"
+        hx-trigger="load"
+        style="font-variant-numeric:tabular-nums">{{ "%.2f"|format(npc.reach_score) }}</span>
+  </small>
+</p>
+
+{% if not npc.is_player %}
+<details style="margin-bottom:0.75rem">
+  <summary style="font-size:0.8rem;color:var(--pico-muted-color);cursor:pointer">Tier controls</summary>
+  <div style="margin-top:0.5rem;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+    <form hx-post="/tier/{{ npc.id }}/set"
+          hx-target="#tier-msg-{{ npc.id }}"
+          hx-swap="innerHTML"
+          style="display:flex;align-items:center;gap:0.4rem">
+      <select name="new_tier" style="font-size:0.8rem;padding:0.2rem 0.4rem">
+        <option value="0" {% if npc.tier==0 %}selected{% endif %}>T0 — Background</option>
+        <option value="1" {% if npc.tier==1 %}selected{% endif %}>T1 — Familiar face</option>
+        <option value="2" {% if npc.tier==2 %}selected{% endif %}>T2 — Acquaintance</option>
+        <option value="3" {% if npc.tier==3 %}selected{% endif %}>T3 — Key figure</option>
+      </select>
+      <label style="font-size:0.8rem;display:flex;align-items:center;gap:0.25rem">
+        <input type="checkbox" name="compress" value="true" style="margin:0"> compress history
+      </label>
+      <button type="submit"
+              style="font-size:0.75rem;padding:0.2rem 0.6rem">Set tier</button>
+    </form>
+    <span id="tier-msg-{{ npc.id }}" style="font-size:0.8rem"></span>
+  </div>
+</details>
+{% endif %}
+
+{% if npc.narrative_summary %}
+<p class="section-label">Narrative summary (compressed history)</p>
+<p style="font-size:0.85rem;color:var(--pico-muted-color);font-style:italic">{{ npc.narrative_summary }}</p>
+{% endif %}
+
+{% if npc.description %}
+<p style="color:var(--pico-muted-color);font-size:0.875rem">{{ npc.description }}</p>
+{% endif %}
+
+<p class="section-label">Big Five</p>
+{% set bf = npc.big_five %}
+{% for trait, val in [("Openness", bf.openness), ("Conscientiousness", bf.conscientiousness), ("Extraversion", bf.extraversion), ("Agreeableness", bf.agreeableness), ("Neuroticism", bf.neuroticism)] %}
+<div class="big-five-row">
+  <span>{{ trait }}</span>
+  <progress max="1" value="{{ val }}"></progress>
+  <span>{{ "%.2f"|format(val) }}</span>
+</div>
+{% endfor %}
+
+{% if npc.skills %}
+<p class="section-label">Skills</p>
+{% for skill, level in npc.skills.items()|sort %}
+<div class="skill-row">
+  <span>{{ skill }}</span>
+  <progress max="1" value="{{ level }}"></progress>
+  <span>{{ "%.2f"|format(level) }}</span>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if npc.trait_tags %}
+<p class="section-label">Trait Tags</p>
+<div class="tag-cloud">
+  {% for t in npc.trait_tags %}<span class="badge badge-tag">{{ t }}</span>{% endfor %}
+</div>
+{% endif %}
+
+{% if npc.values %}
+<p class="section-label">Values</p>
+<div class="tag-cloud">
+  {% for v in npc.values %}<span class="badge badge-tag">{{ v }}</span>{% endfor %}
+</div>
+{% endif %}
+
+{% if npc.known_recipes.count() > 0 %}
+<p class="section-label">Known Recipes ({{ npc.known_recipes.count() }})</p>
+<div class="tag-cloud">
+  {% for entry in npc.known_recipes.entries.values() %}
+  <span class="badge badge-craftable" title="{{ entry.source }}">{{ entry.recipe_id }}</span>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% set active_goals = npc.active_goals() %}
+<p class="section-label">Goals ({{ npc.goals|length }} total, {{ active_goals|length }} active)</p>
+{% if npc.goals %}
+<table style="font-size:0.8rem">
+  <thead><tr><th style="width:50%">Description</th><th>Priority</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+    {% for g in npc.goals %}
+    <tr id="goal-row-{{ g.id }}">
+      <td>{{ g.description }}</td>
+      <td><span class="badge badge-tag">{{ g.priority }}</span></td>
+      <td><span class="badge badge-tag">{{ g.status }}</span></td>
+      <td>
+        {% if g.status == "active" %}
+        <span style="display:flex;gap:0.3rem">
+          <button hx-post="/amplify/goal/{{ npc.id }}/{{ g.id }}/complete"
+                  hx-target="#goal-row-{{ g.id }}"
+                  hx-swap="outerHTML"
+                  style="font-size:0.7rem;padding:0.1rem 0.4rem">✓</button>
+          <button hx-post="/amplify/goal/{{ npc.id }}/{{ g.id }}/abandon"
+                  hx-target="#goal-row-{{ g.id }}"
+                  hx-swap="outerHTML"
+                  style="font-size:0.7rem;padding:0.1rem 0.4rem;background:transparent;border-color:var(--pico-muted-border-color)">✗</button>
+        </span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<span class="empty">No goals.</span>
+{% endif %}
+
+{% if not npc.is_player %}
+<div style="margin-top:0.5rem">
+  <form hx-post="/amplify/goal/{{ npc.id }}"
+        hx-target="#nudge-result-{{ npc.id }}"
+        hx-swap="innerHTML"
+        style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap">
+    <input type="text" name="description" placeholder="Nudge goal…"
+           style="font-size:0.8rem;padding:0.2rem 0.5rem;flex:1;min-width:160px" required>
+    <select name="priority" style="font-size:0.8rem;padding:0.2rem 0.4rem">
+      <option value="high">High</option>
+      <option value="medium">Medium</option>
+      <option value="low">Low</option>
+    </select>
+    <button type="submit" style="font-size:0.75rem;padding:0.2rem 0.6rem">Nudge</button>
+  </form>
+  <span id="nudge-result-{{ npc.id }}" style="font-size:0.8rem"></span>
+</div>
+{% endif %}
+
+{% if npc.relationships %}
+<p class="section-label">Relationships ({{ npc.relationships|length }})</p>
+<table>
+  <thead><tr><th>NPC</th><th>Affinity</th><th>Trust</th><th>Familiarity</th><th>Tags</th></tr></thead>
+  <tbody>
+    {% for rel in npc.relationships.values() %}
+    <tr>
+      <td>
+        <a href="/npc/{{ rel.other_id }}" hx-get="/npc/{{ rel.other_id }}" hx-target="#detail-pane">
+          {{ rel.other_id }}
+        </a>
+      </td>
+      <td>{{ "%.2f"|format(rel.affinity) }}</td>
+      <td>{{ "%.2f"|format(rel.trust) }}</td>
+      <td>{{ "%.2f"|format(rel.familiarity) }}</td>
+      <td>
+        {% for t in rel.tags %}<span class="badge badge-tag">{{ t }}</span>{% endfor %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% set phys = npc.physical %}
+{% if phys.build or phys.hair or phys.notable or phys.age_appearance %}
+<p class="section-label">Physical</p>
+<table>
+  <tbody>
+    {% if phys.build %}<tr><td>Build</td><td>{{ phys.build }}</td></tr>{% endif %}
+    {% if phys.hair %}<tr><td>Hair</td><td>{{ phys.hair }}</td></tr>{% endif %}
+    {% if phys.notable %}<tr><td>Notable</td><td>{{ phys.notable }}</td></tr>{% endif %}
+    {% if phys.age_appearance %}<tr><td>Age appearance</td><td>{{ phys.age_appearance }}</td></tr>{% endif %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if memory_entries %}
+<p class="section-label">Memory ({{ memory_entries|length }})</p>
+<table style="font-size:0.8rem">
+  <thead><tr><th style="width:55%">Content</th><th>Salience</th><th>Source</th><th>Tags</th></tr></thead>
+  <tbody>
+    {% for e in memory_entries %}
+    <tr>
+      <td>{{ e.content }}</td>
+      <td>
+        <form hx-post="/amplify/memory/{{ npc.id }}/{{ e.id }}"
+              hx-target="#sal-msg-{{ e.id }}"
+              hx-swap="innerHTML"
+              style="display:flex;gap:0.25rem;align-items:center">
+          <input type="number" name="salience" value="{{ e.salience }}"
+                 step="0.1" min="0" max="5"
+                 style="width:56px;font-size:0.75rem;padding:0.1rem 0.25rem">
+          <button type="submit" style="font-size:0.7rem;padding:0.1rem 0.3rem">↑</button>
+        </form>
+        <span id="sal-msg-{{ e.id }}" style="font-size:0.72rem"></span>
+      </td>
+      <td><span class="badge badge-tag">{{ e.source }}</span></td>
+      <td>{% for t in e.topic_tags %}<span class="badge badge-tag">{{ t }}</span> {% endfor %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% elif not npc.is_player %}
+<p class="section-label">Memory</p>
+<span class="empty">No memories stored (T{{ npc.tier }} NPC{% if npc.tier == 0 %} — memory disabled{% endif %}).</span>
+{% endif %}
+
+<p class="section-label">Available Affordances ({{ available_actions|length }})</p>
+{% if available_actions %}
+<ul class="action-list">
+  {% for action in available_actions %}
+  <li>
+    <strong>{{ action.id }}</strong>
+    <span class="badge badge-tag">{{ action.category }}</span>
+    — {{ action.name }}
+  </li>
+  {% endfor %}
+</ul>
+{% elif current_zone %}
+<span class="empty">No actions available in current zone.</span>
+{% else %}
+<span class="empty">NPC has no current zone.</span>
+{% endif %}

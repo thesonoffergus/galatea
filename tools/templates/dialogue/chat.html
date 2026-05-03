@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% set active = 'dialogue' %}
+{% block title %}{{ npc.name }} — Dialogue{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:220px 1fr;gap:0;height:calc(100vh - 52px);overflow:hidden">
+
+  <aside style="overflow-y:auto;border-right:1px solid var(--pico-muted-border-color);padding:1rem">
+    <div style="margin-bottom:0.75rem">
+      <strong>{{ npc.name }}</strong>
+      <span class="badge badge-tier{{ npc.tier }}">T{{ npc.tier }}</span><br>
+      <small style="color:var(--pico-muted-color)">{{ npc.role }}</small>
+    </div>
+
+    {% if npc.description %}
+    <p style="font-size:0.8rem;color:var(--pico-muted-color)">{{ npc.description }}</p>
+    {% endif %}
+
+    <p class="section-label">Mood</p>
+    <progress max="1" value="{{ (npc.mood + 1) / 2 }}" style="margin:0"></progress>
+
+    {% if npc.trait_tags %}
+    <p class="section-label">Traits</p>
+    <div class="tag-cloud">
+      {% for t in npc.trait_tags %}<span class="badge badge-tag">{{ t }}</span>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% if npc.values %}
+    <p class="section-label">Values</p>
+    <div class="tag-cloud">
+      {% for v in npc.values %}<span class="badge badge-tag">{{ v }}</span>{% endfor %}
+    </div>
+    {% endif %}
+
+    <p class="section-label">Zone</p>
+    <a href="/world/{{ npc.current_zone_id }}" style="font-size:0.8rem">{{ npc.current_zone_id }}</a>
+
+    <div style="margin-top:1.5rem;display:flex;flex-direction:column;gap:0.4rem">
+      <a href="/npc/{{ npc.id }}" style="font-size:0.8rem">Full NPC profile →</a>
+      <a href="/prompts/?tag=npc:{{ npc.id }}" style="font-size:0.8rem">Prompt history →</a>
+    </div>
+
+    <form method="post" action="/dialogue/{{ npc.id }}/reset" style="margin-top:1rem">
+      <button type="submit"
+              style="font-size:0.75rem;padding:0.2rem 0.6rem;background:transparent;border:1px solid var(--pico-muted-border-color);color:var(--pico-muted-color)">
+        Reset session
+      </button>
+    </form>
+  </aside>
+
+  <main style="display:flex;flex-direction:column;overflow:hidden">
+    <div style="padding:0.75rem 1.25rem;border-bottom:1px solid var(--pico-muted-border-color);font-size:0.85rem;color:var(--pico-muted-color)">
+      Conversation with <strong style="color:var(--pico-color)">{{ npc.name }}</strong>
+      · {{ session.turns|length }} turn(s)
+      {% if not session.is_empty %}
+      · <a href="/prompts/?tag=npc:{{ npc.id }}" style="font-size:0.8rem">view prompts</a>
+      {% endif %}
+    </div>
+
+    <div style="flex:1;overflow-y:auto;padding:1rem 1.25rem">
+      {% if session.is_empty %}
+      <p style="color:var(--pico-muted-color);font-style:italic;font-size:0.875rem">
+        Start the conversation below. The LLM will respond as {{ npc.name }}.
+      </p>
+      {% endif %}
+
+      <div id="conversation">
+        {% include "dialogue/_conversation.html" %}
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// Auto-scroll chat to bottom after HTMX updates
+document.body.addEventListener("htmx:afterSwap", function(e) {
+  if (e.detail.target.id === "conversation") {
+    var history = document.getElementById("chat-history");
+    if (history) history.scrollTop = history.scrollHeight;
+  }
+});
+</script>
+{% endblock %}

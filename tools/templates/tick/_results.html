@@ -1,0 +1,40 @@
+<div id="tick-results">
+  <p class="section-label">Tick {{ tick_number }} — last {{ new_results|length }} run(s)</p>
+  {% for r in new_results %}
+  <div style="font-size:0.82rem;margin-bottom:0.5rem;padding:0.4rem 0.6rem;background:var(--pico-card-background-color);border-radius:4px">
+    <strong>Tick #{{ r.tick_number }}</strong>
+    · {{ r.actions_taken }} action(s)
+    · {{ r.gossip_events }} gossip event(s)
+    {% if r.npc_results %}
+    <ul style="margin:0.3rem 0 0;padding-left:1.2rem;font-size:0.78rem;color:var(--pico-muted-color)">
+      {% for nr in r.npc_results %}
+      {% if nr.action_result %}
+      <li>
+        <a href="/npc/{{ nr.npc_id }}" style="color:var(--pico-color)">{{ nr.npc_id }}</a>
+        → {{ nr.action_result.action_id }}
+        {% if nr.action_result.produced %}
+        <span class="badge badge-craftable">+{{ nr.action_result.produced | join(', ') }}</span>
+        {% endif %}
+        {% if nr.gossiped %}<span class="badge badge-tag">gossiped</span>{% endif %}
+      </li>
+      {% endif %}
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  <p class="section-label" style="margin-top:1rem">Recent events</p>
+  <table style="font-size:0.78rem">
+    <thead><tr><th>Time</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      {% for e in recent_events[:15] %}
+      <tr>
+        <td style="color:var(--pico-muted-color);white-space:nowrap">{{ e.timestamp.strftime("%H:%M:%S") }}</td>
+        <td><span class="badge badge-tag">{{ e.event_type }}</span></td>
+        <td>{{ e.description }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

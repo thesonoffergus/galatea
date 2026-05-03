@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% set active = 'tick' %}
+{% block title %}Tick Stepper{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:260px 1fr;gap:0;height:calc(100vh - 52px);overflow:hidden">
+
+  <aside style="overflow-y:auto;border-right:1px solid var(--pico-muted-border-color);padding:1rem">
+    <h3 style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--pico-muted-color);margin-bottom:0.75rem">Tick Stepper</h3>
+
+    <p style="font-size:0.85rem;margin-bottom:0.75rem">
+      Current tick: <strong>{{ tick_number }}</strong>
+    </p>
+
+    <form hx-post="/tick/step"
+          hx-target="#tick-results"
+          hx-swap="outerHTML"
+          hx-indicator="#tick-spinner"
+          style="display:flex;flex-direction:column;gap:0.5rem">
+      <label style="font-size:0.75rem;color:var(--pico-muted-color)">Number of ticks
+        <input type="number" name="n" value="1" min="1" max="50"
+               style="font-size:0.85rem;margin-top:0.15rem">
+      </label>
+      <button type="submit" style="font-size:0.85rem">▶ Step</button>
+      <span id="tick-spinner" class="htmx-indicator"
+            style="font-size:0.75rem;color:var(--pico-muted-color)">Running…</span>
+    </form>
+
+    <p style="margin-top:1.5rem;font-size:0.75rem;color:var(--pico-muted-color)">
+      Each tick advances all T1–T3 NPCs once. T0 NPCs are skipped.
+      Stochastic at T1; goal-driven at T2+.
+    </p>
+  </aside>
+
+  <main style="overflow-y:auto;padding:1.25rem 1.5rem">
+    {% if last_results %}
+    {% set new_results = last_results[:1] %}
+    {% include "tick/_results.html" %}
+    {% else %}
+    <div id="tick-results">
+      <p class="empty">No ticks run yet. Use the stepper to advance the simulation.</p>
+    </div>
+    {% endif %}
+  </main>
+
+</div>
+{% endblock %}

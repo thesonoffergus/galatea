@@ -1,0 +1,871 @@
+# Starter world: Village of Thornhaven
+# Hand-authored seed for MVP development and testing.
+#
+# Structure:
+#   - wilderness (root zone)
+#     ├── village_of_thornhaven
+#     │   ├── village_square
+#     │   ├── smithy (the_hammer_and_tongs)
+#     │   │   ├── forge_room
+#     │   │   └── smithy_storefront
+#     │   ├── green_man_tavern
+#     │   │   ├── common_room
+#     │   │   ├── tavern_kitchen
+#     │   │   └── tavern_cellar
+#     │   ├── market_stalls
+#     │   ├── thornhaven_mill
+#     │   ├── herbalist_shop (wren's remedies)
+#     │   ├── carpenter_workshop
+#     │   ├── village_well
+#     │   ├── village_shrine
+#     │   ├── house_aldric
+#     │   ├── house_maren
+#     │   ├── house_wren
+#     │   ├── house_oswin
+#     │   └── house_common (shared housing for laborers)
+#     ├── thornwood_forest
+#     ├── grey_river
+#     ├── ironvein_hill
+#     └── wilderness_road
+
+world:
+  name: "The Valley of Thornhaven"
+  description: >
+    A remote valley sheltered by hills, home to the small village of Thornhaven.
+    The forest provides timber and herbs; the river fish and clay; the hills iron ore.
+    The valley has been settled for two generations and is largely self-sufficient.
+
+zones:
+
+  # ── Root ─────────────────────────────────────────────────────────────────────
+  - id: wilderness
+    name: "Thornhaven Valley Wilderness"
+    description: "The untamed land surrounding the village — forest, river, and hill country."
+    terrain_type: wilderness
+    tags: [outdoor, wilderness]
+    parent: null
+    connects_to: []
+
+  # ── Natural zones ─────────────────────────────────────────────────────────────
+  - id: thornwood_forest
+    name: "Thornwood Forest"
+    description: "Dense woodland north of the village, rich with oak and ash. Good for timber, herbs, and game."
+    terrain_type: forest
+    tags: [outdoor, forest, timber, wild_herbs, game_animals, wild_berries]
+    parent: wilderness
+    connects_to: [village_of_thornhaven, grey_river]
+
+  - id: grey_river
+    name: "Grey River"
+    description: >
+      A broad, slow-moving river that curves through the valley floor.
+      The crossing near the village is shallow enough to ford.
+    terrain_type: river
+    tags: [outdoor, river, water_source, fish_population, clay_deposit]
+    parent: wilderness
+    connects_to: [village_of_thornhaven, thornwood_forest, ironvein_hill]
+
+  - id: ironvein_hill
+    name: "Ironvein Hill"
+    description: "A rocky rise east of the village. Surface outcrops of iron ore and good building stone."
+    terrain_type: hill
+    tags: [outdoor, hill, ore_deposit, stone_deposit, mine]
+    parent: wilderness
+    connects_to: [village_of_thornhaven, grey_river]
+    features:
+      - name: "Mine Entrance"
+        description: "A rough-cut tunnel into the hillside, shored with timber."
+        tags: [mine, underground]
+
+  - id: wilderness_road
+    name: "Valley Road"
+    description: "The rutted dirt track that connects Thornhaven to the wider world. Rarely traveled."
+    terrain_type: road
+    tags: [outdoor, road]
+    parent: wilderness
+    connects_to: [village_of_thornhaven]
+
+  # ── Village ───────────────────────────────────────────────────────────────────
+  - id: village_of_thornhaven
+    name: "Village of Thornhaven"
+    description: "A small agricultural and craft village of perhaps two dozen souls."
+    terrain_type: settlement
+    tags: [outdoor, settlement, public]
+    parent: wilderness
+    connects_to: [thornwood_forest, grey_river, ironvein_hill, wilderness_road]
+
+  - id: village_square
+    name: "Village Square"
+    description: "The open central space of Thornhaven. Market days are held here; the well stands at its center."
+    terrain_type: settlement
+    tags: [outdoor, settlement, public]
+    parent: village_of_thornhaven
+    connects_to:
+      - smithy_storefront
+      - green_man_tavern_entrance
+      - market_stalls
+      - herbalist_shop
+      - carpenter_workshop
+      - village_shrine
+    features:
+      - name: "Village Well"
+        description: "A stone-lined well with a hand crank and bucket. The village's primary water source."
+        tags: [water_source]
+
+  # ── Smithy ────────────────────────────────────────────────────────────────────
+  - id: the_hammer_and_tongs
+    name: "The Hammer and Tongs"
+    description: "Thornhaven's smithy, run by Aldric Stonehand. Smells of coal smoke and hot iron."
+    terrain_type: building_interior
+    tags: [indoor, settlement, owned, private]
+    parent: village_of_thornhaven
+    connects_to: []
+    owner_ids: [npc_aldric_stonehand]
+
+  - id: forge_room
+    name: "Forge Room"
+    description: "The working heart of the smithy. Swelteringly hot. The forge roars day and night."
+    terrain_type: building_interior
+    tags: [indoor, forge, heat_source, anvil, bellows, air_supply, tool_storage, loud]
+    parent: the_hammer_and_tongs
+    connects_to: [smithy_storefront]
+    features:
+      - name: "Forge"
+        description: "A brick-and-iron forge, well-maintained and efficient."
+        tags: [forge, heat_source, air_supply]
+        quality: 0.85
+      - name: "Anvil"
+        description: "A heavy steel anvil, worn smooth from years of use."
+        tags: [anvil]
+        quality: 0.80
+      - name: "Tool Rack"
+        description: "A wall-mounted rack holding hammers, tongs, and punches."
+        tags: [tool_storage]
+        quality: 0.75
+
+  - id: smithy_storefront
+    name: "Smithy Storefront"
+    description: "A small counter at the front of the smithy where Aldric sells finished goods."
+    terrain_type: building_interior
+    tags: [indoor, settlement, public, goods_for_sale, storage]
+    parent: the_hammer_and_tongs
+    connects_to: [forge_room, village_square]
+
+  # ── Tavern ────────────────────────────────────────────────────────────────────
+  - id: green_man_tavern
+    name: "The Green Man Tavern"
+    description: "The social heart of Thornhaven. Low beams, a perpetual fire, and Wren Thatch behind the bar."
+    terrain_type: building_interior
+    tags: [indoor, settlement, owned, tavern, inn, public]
+    parent: village_of_thornhaven
+    connects_to: []
+    owner_ids: [npc_wren_thatch]
+
+  - id: green_man_tavern_entrance
+    name: "Tavern Entrance"
+    description: "The front door of the Green Man. A carved wooden sign hangs above."
+    terrain_type: building_interior
+    tags: [indoor, public]
+    parent: green_man_tavern
+    connects_to: [village_square, tavern_common_room]
+
+  - id: tavern_common_room
+    name: "Tavern Common Room"
+    description: "Long tables, benches worn smooth, a stone fireplace at the far end. The village gossip exchange."
+    terrain_type: building_interior
+    tags: [indoor, settlement, public, tavern, social, cooking_fire]
+    parent: green_man_tavern
+    connects_to: [green_man_tavern_entrance, tavern_kitchen, tavern_cellar]
+    features:
+      - name: "Fireplace"
+        description: "A large stone fireplace that heats the room and serves as a cooking hearth."
+        tags: [cooking_fire, heat_source]
+        quality: 0.90
+
+  - id: tavern_kitchen
+    name: "Tavern Kitchen"
+    description: "A cramped but functional kitchen behind the common room. Always something on the fire."
+    terrain_type: building_interior
+    tags: [indoor, private, cooking_fire, heat_source, storage]
+    parent: green_man_tavern
+    connects_to: [tavern_common_room]
+    features:
+      - name: "Cooking Oven"
+        description: "A clay and brick oven, blackened with age."
+        tags: [cooking_fire, heat_source]
+        quality: 0.70
+      - name: "Pantry Shelves"
+        description: "Wooden shelves stocked with dried goods, preserved meats, and ale barrels."
+        tags: [storage, grain_storage]
+
+  - id: tavern_cellar
+    name: "Tavern Cellar"
+    description: "A cool, dark cellar beneath the tavern. Ale barrels and stored provisions."
+    terrain_type: underground
+    tags: [underground, indoor, private, storage, brewing_vessel]
+    parent: green_man_tavern
+    connects_to: [tavern_common_room]
+    features:
+      - name: "Ale Barrels"
+        description: "Large oak barrels of Thornhaven brown ale, brewed locally."
+        tags: [brewing_vessel, storage]
+        quality: 0.65
+
+  # ── Market ────────────────────────────────────────────────────────────────────
+  - id: market_stalls
+    name: "Market Stalls"
+    description: "A row of covered stalls on the east side of the village square. Active on market days."
+    terrain_type: settlement
+    tags: [outdoor, settlement, public, market, goods_for_sale, storage]
+    parent: village_of_thornhaven
+    connects_to: [village_square]
+
+  # ── Mill ─────────────────────────────────────────────────────────────────────
+  - id: thornhaven_mill
+    name: "Thornhaven Mill"
+    description: "A water-driven mill on the millrace off the Grey River. Oswin the Miller keeps it running."
+    terrain_type: building_interior
+    tags: [indoor, settlement, owned, millstone, grain_storage]
+    parent: village_of_thornhaven
+    connects_to: [village_square, grey_river]
+    owner_ids: [npc_oswin_miller]
+    features:
+      - name: "Millstone"
+        description: "A large granite millstone driven by the water wheel."
+        tags: [millstone]
+        quality: 0.80
+      - name: "Grain Bins"
+        description: "Deep wooden bins that hold unground grain."
+        tags: [grain_storage, storage]
+
+  # ── Herbalist ─────────────────────────────────────────────────────────────────
+  - id: herbalist_shop
+    name: "Maren's Remedies"
+    description: "A small, fragrant shop crammed with dried herbs, stoppered bottles, and handmade remedies."
+    terrain_type: building_interior
+    tags: [indoor, settlement, owned, goods_for_sale, storage, wild_herbs]
+    parent: village_of_thornhaven
+    connects_to: [village_square]
+    owner_ids: [npc_maren_coldwater]
+    features:
+      - name: "Herb Drying Racks"
+        description: "Ceiling-hung bundles of drying herbs and flowers."
+        tags: [wild_herbs]
+      - name: "Brewing Table"
+        description: "A sturdy table with mortars, pestles, and small clay vessels."
+        tags: [brewing_vessel, workbench]
+        quality: 0.75
+
+  # ── Carpenter ─────────────────────────────────────────────────────────────────
+  - id: carpenter_workshop
+    name: "Britta's Workshop"
+    description: "A sawdust-floored workshop where Britta Carpenter shapes timber into useful things."
+    terrain_type: building_interior
+    tags: [indoor, settlement, owned, workbench, tool_storage, timber]
+    parent: village_of_thornhaven
+    connects_to: [village_square]
+    owner_ids: [npc_britta_carpenter]
+    features:
+      - name: "Workbench"
+        description: "A heavy oak workbench with a vise and plenty of tool marks."
+        tags: [workbench, tool_storage]
+        quality: 0.80
+      - name: "Lumber Stack"
+        description: "Seasoned planks and rough-cut timber stacked along the wall."
+        tags: [timber, storage]
+
+  # ── Shrine ────────────────────────────────────────────────────────────────────
+  - id: village_shrine
+    name: "Shrine of the Hearth"
+    description: >
+      A small stone shrine to the village's patron spirit. Father Cedric tends the
+      eternal flame and offers counsel to those who seek it.
+    terrain_type: settlement
+    tags: [outdoor, settlement, sacred, public]
+    parent: village_of_thornhaven
+    connects_to: [village_square]
+    features:
+      - name: "Eternal Flame"
+        description: "A stone brazier kept burning day and night by Father Cedric."
+        tags: [heat_source, sacred]
+
+  # ── Residences ────────────────────────────────────────────────────────────────
+  - id: house_aldric
+    name: "Aldric's House"
+    description: "A sturdy stone house attached to the smithy. Simple and well-maintained."
+    terrain_type: building_interior
+    tags: [indoor, settlement, owned, private]
+    parent: village_of_thornhaven
+    connects_to: [the_hammer_and_tongs]
+    owner_ids: [npc_aldric_stonehand]
+
+  - id: house_maren
+    name: "Maren's House"
+    description: "A modest house behind the herbalist shop. Herb garden out back."
+    terrain_type: building_interior
+    tags: [indoor, settlement, owned, private, wild_herbs]
+    parent: village_of_thornhaven
+    connects_to: [herbalist_shop]
+    owner_ids: [npc_maren_coldwater]
+
+  - id: house_wren
+    name: "Wren's Quarters"
+    description: "Wren Thatch's private rooms above the tavern."
+    terrain_type: building_interior
+    tags: [indoor, settlement, owned, private]
+    parent: green_man_tavern
+    connects_to: [tavern_common_room]
+    owner_ids: [npc_wren_thatch]
+
+  - id: house_oswin
+    name: "Oswin's House"
+    description: "A comfortable house near the mill. Smells faintly of flour."
+    terrain_type: building_interior
+    tags: [indoor, settlement, owned, private]
+    parent: village_of_thornhaven
+    connects_to: [thornhaven_mill]
+    owner_ids: [npc_oswin_miller]
+
+  - id: house_common
+    name: "Common House"
+    description: "A long, low building shared by several village laborers and transient workers."
+    terrain_type: building_interior
+    tags: [indoor, settlement, public]
+    parent: village_of_thornhaven
+    connects_to: [village_square]
+
+
+# ── Community Knowledge Base ──────────────────────────────────────────────────
+# Shared facts known across the village at game start.
+
+community_kb:
+
+  - content: "A merchant caravan from the capital is expected to pass through Thornhaven within a fortnight."
+    topic_tags: [trade, travel, outsiders]
+    involved_zone_id: wilderness_road
+    gossip_weight: 1.5
+
+  - content: "The eastern bridge over the Grey River was damaged in last winter's flood and has not been fully repaired."
+    topic_tags: [infrastructure, grey_river, travel]
+    involved_zone_id: grey_river
+    gossip_weight: 1.0
+
+  - content: "Aldric Stonehand has raised his prices on iron tools by a third, citing ore shortages at Ironvein Hill."
+    topic_tags: [trade, smith, ore, economy]
+    involved_npc_ids: [npc_aldric_stonehand]
+    involved_zone_id: the_hammer_and_tongs
+    source_npc_id: npc_wren_thatch
+    gossip_weight: 1.8
+
+  - content: "A pack of wolves was spotted near the treeline at the northern edge of Thornwood two nights ago."
+    topic_tags: [danger, forest, wildlife]
+    involved_zone_id: thornwood_forest
+    gossip_weight: 2.0
+
+  - content: "Maren Coldwater has been gathering unusual quantities of feverfew and nightshade. She will not say why."
+    topic_tags: [herbalism, mystery, medicine]
+    involved_npc_ids: [npc_maren_coldwater]
+    involved_zone_id: herbalist_shop
+    source_npc_id: npc_wren_thatch
+    gossip_weight: 1.6
+
+  - content: "The mill wheel has been grinding unevenly since Oswin replaced the axle pin last month."
+    topic_tags: [infrastructure, mill, grain]
+    involved_npc_ids: [npc_oswin_miller]
+    involved_zone_id: thornhaven_mill
+    gossip_weight: 0.8
+
+  - content: "Father Cedric has declared a day of fasting and prayer for the end of the month, at the village shrine."
+    topic_tags: [religion, shrine, community_event]
+    involved_npc_ids: [npc_father_cedric]
+    involved_zone_id: village_shrine
+    source_npc_id: npc_father_cedric
+    gossip_weight: 1.2
+
+
+# ── NPCs ───────────────────────────────────────────────────────────────────────
+# Full trait data lives in npc/schema; this seed file establishes identities,
+# starting locations, owned recipes, and initial tier.
+
+npcs:
+
+  # ── Player character ──────────────────────────────────────────────────────────
+  # Blank slate — character builder is deferred. Skills and recipes acquired in play.
+  - id: player
+    name: "The Wanderer"
+    role: "Wanderer"
+    tier: 2
+    is_player: true
+    starting_zone: village_square
+    description: "A newcomer to Thornhaven. No one knows much about them yet."
+    big_five:
+      openness: 0.50
+      conscientiousness: 0.50
+      extraversion: 0.50
+      agreeableness: 0.50
+      neuroticism: 0.50
+    trait_tags: []
+    values: []
+    skills: {}
+    known_recipes: []
+    physical:
+      build: "unremarkable"
+      hair: "unremarkable"
+      notable: "a stranger in town"
+
+  - id: npc_aldric_stonehand
+    name: "Aldric Stonehand"
+    role: "Blacksmith"
+    tier: 3
+    starting_zone: forge_room
+    description: >
+      The village blacksmith. A broad, quiet man of middle years. Respected and
+      somewhat feared — he knows what everyone needs and how long they can wait for it.
+    big_five:
+      openness: 0.35
+      conscientiousness: 0.85
+      extraversion: 0.25
+      agreeableness: 0.55
+      neuroticism: 0.20
+    trait_tags: [methodical, proud_of_craft, taciturn, fair]
+    values: [craft, community, self_sufficiency]
+    skills:
+      smithing: 0.90
+      mining: 0.40
+      trading: 0.45
+    known_recipes:
+      - smith_sword
+      - smith_axe
+      - smith_tool
+      - smith_knife
+      - smith_nails
+      - smelt_iron
+      - smith_horseshoe
+    physical:
+      build: "broad and muscular"
+      hair: "iron-grey, close-cropped"
+      notable: "burn scars on both forearms"
+    memories:
+      - content: "The last shipment of iron ore from Ironvein Hill was leaner than expected — the surface outcrop may be thinning."
+        salience: 1.8
+        topic_tags: [ore, trade, economy, ironvein_hill]
+        involved_zone_id: ironvein_hill
+        source: seeded
+      - content: "I turned down a request from a passing trader to make a sword 'with no questions asked.' Something felt wrong about him."
+        salience: 1.4
+        topic_tags: [outsiders, trade, suspicion]
+        source: seeded
+      - content: "The carpenter Britta asked me to price out iron brackets for a new building project. I gave her a fair rate."
+        salience: 0.8
+        topic_tags: [trade, community]
+        involved_npc_ids: [npc_britta_carpenter]
+        source: seeded
+
+  - id: npc_maren_coldwater
+    name: "Maren Coldwater"
+    role: "Herbalist and Healer"
+    tier: 2
+    starting_zone: herbalist_shop
+    description: >
+      The village healer. Sharp-eyed, soft-spoken, and privately skeptical of
+      almost everyone. The person villagers visit when they can't afford to be wrong.
+    big_five:
+      openness: 0.75
+      conscientiousness: 0.80
+      extraversion: 0.30
+      agreeableness: 0.60
+      neuroticism: 0.35
+    trait_tags: [observant, skeptical, precise, private]
+    values: [knowledge, health, independence]
+    skills:
+      herbalism: 0.85
+      medicine: 0.80
+      brewing: 0.65
+      trading: 0.35
+    known_recipes:
+      - brew_healing_poultice
+      - brew_fever_tincture
+      - brew_sleep_draught
+      - gather_medicinal_herbs
+      - brew_potion
+    physical:
+      build: "slight, wiry"
+      hair: "dark, usually pinned back"
+      notable: "always has herb stains on her fingers"
+    memories:
+      - content: "I've been collecting unusually large amounts of feverfew and nightshade — more than I can explain publicly. It is for a private remedy."
+        salience: 2.0
+        topic_tags: [herbalism, secret, medicine]
+        involved_zone_id: thornwood_forest
+        source: seeded
+      - content: "Old Hawke came in with a badly infected hand last week. I treated it but told no one — his pride is fragile."
+        salience: 1.2
+        topic_tags: [medicine, community, secrets]
+        involved_npc_ids: [npc_old_hawke]
+        source: seeded
+
+  - id: npc_wren_thatch
+    name: "Wren Thatch"
+    role: "Innkeeper and Tavern-Keeper"
+    tier: 3
+    starting_zone: tavern_common_room
+    description: >
+      The innkeeper of the Green Man. Cheerful, relentlessly curious, and the
+      best-informed person in the village by a wide margin. Collects gossip like
+      a magpie collects shiny things.
+    big_five:
+      openness: 0.70
+      conscientiousness: 0.65
+      extraversion: 0.90
+      agreeableness: 0.75
+      neuroticism: 0.25
+    trait_tags: [gossipy, charming, perceptive, generous, greedy]
+    values: [community, wealth, entertainment]
+    skills:
+      brewing: 0.70
+      cooking: 0.65
+      trading: 0.80
+      persuasion: 0.75
+    known_recipes:
+      - bake_bread
+      - brew_ale
+      - cook_stew
+      - brew_potion
+    physical:
+      build: "average, quick-moving"
+      hair: "sandy red, perpetually escaping a braid"
+      notable: "laughs easily and often"
+    memories:
+      - content: "Two travelers stopped at the inn last week and spoke of a plague in a village three days' ride north. I haven't spread that particular rumor yet."
+        salience: 2.0
+        topic_tags: [outsiders, danger, disease, travel]
+        source: seeded
+      - content: "Aldric's prices have gone up sharply. Several farmers have been grumbling about it in the common room."
+        salience: 1.3
+        topic_tags: [trade, economy, smith, community_mood]
+        involved_npc_ids: [npc_aldric_stonehand]
+        source: seeded
+      - content: "Father Cedric has been visiting the tavern more often than usual lately. He seems troubled."
+        salience: 1.1
+        topic_tags: [religion, community, observation]
+        involved_npc_ids: [npc_father_cedric]
+        source: seeded
+
+  - id: npc_oswin_miller
+    name: "Oswin the Miller"
+    role: "Miller"
+    tier: 2
+    starting_zone: thornhaven_mill
+    description: >
+      The village miller. A heavyset, practical man who takes quiet pride in
+      keeping the mill running and the village fed. Suspicious of strangers.
+    big_five:
+      openness: 0.25
+      conscientiousness: 0.80
+      extraversion: 0.35
+      agreeableness: 0.50
+      neuroticism: 0.30
+    trait_tags: [practical, suspicious, stubborn, reliable]
+    values: [family, stability, hard_work]
+    skills:
+      milling: 0.85
+      farming: 0.55
+      carpentry: 0.40
+      trading: 0.50
+    known_recipes:
+      - grind_grain
+      - bake_bread
+      - craft_rope
+    physical:
+      build: "stout, strong hands"
+      hair: "mousy brown, always dusty with flour"
+      notable: "missing the tip of his left index finger"
+    memories:
+      - content: "The mill wheel has been grinding unevenly since I replaced the axle pin. I haven't told anyone yet — I need to fix it quietly."
+        salience: 1.9
+        topic_tags: [mill, infrastructure, secret]
+        involved_zone_id: thornhaven_mill
+        source: seeded
+      - content: "Grain stores from last harvest were thinner than I reported to the village elder. We should be fine — unless it's a hard winter."
+        salience: 1.5
+        topic_tags: [grain, economy, secrets]
+        involved_zone_id: thornhaven_mill
+        source: seeded
+
+  - id: npc_britta_carpenter
+    name: "Britta Carpenter"
+    role: "Carpenter"
+    tier: 1
+    starting_zone: carpenter_workshop
+    description: >
+      A skilled carpenter who moved to Thornhaven three years ago. Keeps to
+      herself but takes obvious pride in her work.
+    big_five:
+      openness: 0.50
+      conscientiousness: 0.80
+      extraversion: 0.25
+      agreeableness: 0.55
+      neuroticism: 0.30
+    trait_tags: [precise, quiet, proud_of_craft]
+    values: [craft, independence]
+    skills:
+      carpentry: 0.80
+      crafting_general: 0.60
+      trading: 0.35
+    known_recipes:
+      - craft_plank
+      - craft_barrel
+      - craft_wheel
+      - craft_rope
+    physical:
+      build: "lean, strong forearms"
+      hair: "close-cropped dark"
+      notable: "perpetually has sawdust in her hair"
+
+  - id: npc_father_cedric
+    name: "Father Cedric"
+    role: "Shrine Keeper"
+    tier: 1
+    starting_zone: village_shrine
+    description: >
+      An older man who tends the village shrine and serves as an informal
+      mediator for disputes. Patient, a little ponderous, and genuinely kind.
+    big_five:
+      openness: 0.55
+      conscientiousness: 0.70
+      extraversion: 0.50
+      agreeableness: 0.85
+      neuroticism: 0.25
+    trait_tags: [pious, patient, mediator, wise]
+    values: [faith, community, peace]
+    skills:
+      persuasion: 0.65
+      medicine: 0.30
+      herbalism: 0.30
+    known_recipes: []
+    physical:
+      build: "thin, stooped with age"
+      hair: "white, sparse"
+      notable: "always wears a grey robe"
+
+  - id: npc_dalla_tanner
+    name: "Dalla Tanner"
+    role: "Tanner"
+    tier: 1
+    starting_zone: village_of_thornhaven
+    description: >
+      Works the village tannery (a small operation behind the carpenter's
+      workshop, currently without its own zone). Practical, unsentimental,
+      and takes no offense at jokes about the smell.
+    big_five:
+      openness: 0.40
+      conscientiousness: 0.70
+      extraversion: 0.45
+      agreeableness: 0.60
+      neuroticism: 0.20
+    trait_tags: [practical, resilient, blunt]
+    values: [fair_dealing, hard_work]
+    skills:
+      tanning: 0.75
+      hunting: 0.50
+      trading: 0.45
+    known_recipes:
+      - tan_hide
+      - craft_leather
+    physical:
+      build: "sturdy, work-worn"
+      hair: "brown, tied back"
+      notable: "hands perpetually stained dark from tanning"
+
+  - id: npc_old_hawke
+    name: "Old Hawke"
+    role: "Fisherman"
+    tier: 1
+    starting_zone: grey_river
+    description: >
+      An old fisherman who has worked the Grey River since childhood. Speaks
+      slowly and mostly in observations about weather, fish, and the river.
+    big_five:
+      openness: 0.40
+      conscientiousness: 0.55
+      extraversion: 0.30
+      agreeableness: 0.65
+      neuroticism: 0.20
+    trait_tags: [patient, observant, weathered]
+    values: [simple_life, nature, tradition]
+    skills:
+      fishing: 0.85
+      foraging: 0.55
+      hunting: 0.40
+    known_recipes:
+      - fish
+      - cook_stew
+    physical:
+      build: "wiry, sun-darkened"
+      hair: "white, wild"
+      notable: "rarely seen without his fishing rod"
+
+  - id: npc_tam_silverthread
+    name: "Tam Silverthread"
+    role: "Travelling Trader"
+    tier: 1
+    starting_zone: market_stalls
+    description: >
+      A trader who passes through Thornhaven regularly. Buys and sells
+      a little of everything. Cheerful and slippery in equal measure.
+    big_five:
+      openness: 0.80
+      conscientiousness: 0.45
+      extraversion: 0.85
+      agreeableness: 0.65
+      neuroticism: 0.30
+    trait_tags: [charming, opportunistic, well_traveled]
+    values: [wealth, freedom, novelty]
+    skills:
+      trading: 0.85
+      persuasion: 0.75
+      appraisal: 0.70
+    known_recipes: []
+    physical:
+      build: "average, well-dressed for a village"
+      hair: "dark with silver at the temples"
+      notable: "always has a new ring or brooch"
+
+  - id: npc_petra_fieldsmay
+    name: "Petra Fieldsmay"
+    role: "Farm Laborer"
+    tier: 0
+    starting_zone: village_of_thornhaven
+    description: "A young farm worker. Works hard, says little, knows everyone."
+    big_five:
+      openness: 0.30
+      conscientiousness: 0.65
+      extraversion: 0.40
+      agreeableness: 0.70
+      neuroticism: 0.35
+    trait_tags: [hardworking, shy]
+    values: [family, stability]
+    skills:
+      farming: 0.55
+      foraging: 0.40
+    known_recipes:
+      - gather_herbs
+      - forage_berries
+    physical:
+      build: "stocky, sun-browned"
+      hair: "light brown, braided"
+      notable: "usually has dirt under her nails"
+
+
+# ── Starting world items ───────────────────────────────────────────────────────
+# These are items placed in zones at world creation. They serve two purposes:
+# (1) break bootstrapping circular dependencies (tools needed to gather ore that
+#     is needed to make tools), and (2) give the player and NPCs starting materials.
+
+items:
+  # Aldric's smithy storefront — tools for sale
+  - id: item_smithy_pickaxe_01
+    name: "Iron Pickaxe"
+    item_type: tool
+    tags: [tool, ore]
+    quality: 0.75
+    zone_id: smithy_storefront
+    owner_id: npc_aldric_stonehand
+
+  - id: item_smithy_axe_01
+    name: "Felling Axe"
+    item_type: axe
+    tags: [tool, wood]
+    quality: 0.80
+    zone_id: smithy_storefront
+    owner_id: npc_aldric_stonehand
+
+  - id: item_smithy_knife_01
+    name: "Utility Knife"
+    item_type: knife
+    tags: [tool, weapon]
+    quality: 0.70
+    zone_id: smithy_storefront
+    owner_id: npc_aldric_stonehand
+
+  # Aldric's forge room — raw materials on hand
+  - id: item_forge_iron_ingot_01
+    name: "Iron Ingot"
+    item_type: iron_ingot
+    tags: [refined_material, ore]
+    quality: 0.80
+    zone_id: forge_room
+    owner_id: npc_aldric_stonehand
+
+  - id: item_forge_iron_ingot_02
+    name: "Iron Ingot"
+    item_type: iron_ingot
+    tags: [refined_material, ore]
+    quality: 0.75
+    zone_id: forge_room
+    owner_id: npc_aldric_stonehand
+
+  - id: item_forge_wood_log_01
+    name: "Split Log"
+    item_type: wood_log
+    tags: [raw_material, wood, fuel]
+    quality: 1.0
+    zone_id: forge_room
+
+  # Thornwood forest — loose materials
+  - id: item_forest_herb_01
+    name: "Wild Herbs"
+    item_type: herb
+    tags: [raw_material, herb, ingredient]
+    quality: 1.0
+    zone_id: thornwood_forest
+
+  - id: item_forest_herb_02
+    name: "Wild Herbs"
+    item_type: herb
+    tags: [raw_material, herb, ingredient]
+    quality: 0.90
+    zone_id: thornwood_forest
+
+  # Grey river — fish on hand for Old Hawke
+  - id: item_river_fish_01
+    name: "River Fish"
+    item_type: raw_fish
+    tags: [raw_material, food]
+    quality: 1.0
+    zone_id: grey_river
+    owner_id: npc_old_hawke
+
+  # Herbalist shop — stock of herbs
+  - id: item_herbalist_herb_01
+    name: "Medicinal Herb"
+    item_type: herb
+    tags: [raw_material, herb, ingredient, medicine]
+    quality: 0.95
+    zone_id: herbalist_shop
+    owner_id: npc_maren_coldwater
+
+  - id: item_herbalist_herb_02
+    name: "Medicinal Herb"
+    item_type: herb
+    tags: [raw_material, herb, ingredient, medicine]
+    quality: 0.90
+    zone_id: herbalist_shop
+    owner_id: npc_maren_coldwater
+
+  # Tavern kitchen — flour and grain for baking
+  - id: item_kitchen_flour_01
+    name: "Flour Sack"
+    item_type: flour
+    tags: [refined_material, ingredient, grain]
+    quality: 0.85
+    zone_id: tavern_kitchen
+    owner_id: npc_wren_thatch
+
+  - id: item_kitchen_grain_01
+    name: "Sack of Grain"
+    item_type: grain
+    tags: [raw_material, ingredient, grain]
+    quality: 1.0
+    zone_id: tavern_kitchen
+    owner_id: npc_wren_thatch

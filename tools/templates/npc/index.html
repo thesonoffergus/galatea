@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% set active = 'npc' %}
+{% block title %}NPC Inspector — Galatea{% endblock %}
+{% block content %}
+<div class="layout">
+  <aside class="sidebar">
+    <h3>NPCs ({{ npcs|length }})</h3>
+    <ul>
+      {% for n in npcs %}
+      <li>
+        <a href="/npc/{{ n.id }}"
+           {% if selected and selected.id == n.id %}class="active"{% endif %}
+           hx-get="/npc/{{ n.id }}"
+           hx-target="#detail-pane"
+           hx-push-url="true">
+          <span class="badge badge-tier{{ n.tier }}">T{{ n.tier }}</span>
+          {% if n.is_player %}<span class="badge badge-player">P</span>{% endif %}
+          {{ n.name }}
+          <br><small style="color:var(--pico-muted-color)">{{ n.role }}</small>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </aside>
+  <main id="detail-pane" class="detail-pane">
+    {% if selected %}
+      {% include "npc/_detail.html" %}
+    {% else %}
+      <div class="placeholder">Select an NPC from the list.</div>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}

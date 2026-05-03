@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% set active = 'world' %}
+{% block title %}World Inspector — Galatea{% endblock %}
+{% block content %}
+<div class="layout">
+  <aside class="sidebar">
+    <h3>Zones ({{ zones|length }})</h3>
+    <ul>
+      {% for z in zones %}
+      <li>
+        <a href="/world/{{ z.id }}"
+           {% if selected and selected.id == z.id %}class="active"{% endif %}
+           hx-get="/world/{{ z.id }}"
+           hx-target="#detail-pane"
+           hx-push-url="true">
+          {{ z.name }}
+          <small style="color:var(--pico-muted-color)"> {{ z.terrain_type }}</small>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </aside>
+  <main id="detail-pane" class="detail-pane">
+    {% if selected %}
+      {% include "world/_zone.html" %}
+    {% else %}
+      <div class="placeholder">Select a zone from the list.</div>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% set active = 'knowledge' %}
+{% block title %}Community KB{% endblock %}
+{% block content %}
+<div class="layout">
+
+  <aside class="sidebar">
+    <h3>Filter by tag</h3>
+    <ul>
+      <li><a href="/knowledge/" {% if not tag_filter %}class="active"{% endif %}>All ({{ total }})</a></li>
+      {% for tag in all_tags %}
+      <li>
+        <a href="/knowledge/?tag={{ tag }}" {% if tag_filter == tag %}class="active"{% endif %}>
+          {{ tag }}
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </aside>
+
+  <main class="detail-pane">
+    <h2 style="margin-top:0">
+      Community Knowledge Base
+      {% if tag_filter %}<span class="badge badge-tag">{{ tag_filter }}</span>{% endif %}
+      <small style="font-weight:400;font-size:0.8rem;color:var(--pico-muted-color)">({{ entries|length }} entries)</small>
+    </h2>
+
+    {% if entries %}
+    <table>
+      <thead>
+        <tr>
+          <th style="width:48%">Content</th>
+          <th>Gossip weight</th>
+          <th>Zone</th>
+          <th>NPCs</th>
+          <th>Tags</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in entries %}
+        <tr>
+          <td style="font-size:0.85rem">{{ e.content }}</td>
+          <td>
+            <form hx-post="/amplify/kb/{{ e.id }}"
+                  hx-target="#gw-msg-{{ e.id }}"
+                  hx-swap="innerHTML"
+                  style="display:flex;gap:0.25rem;align-items:center">
+              <input type="number" name="gossip_weight" value="{{ e.gossip_weight }}"
+                     step="0.1" min="0" max="5"
+                     style="width:56px;font-size:0.8rem;padding:0.15rem 0.3rem">
+              <button type="submit" style="font-size:0.75rem;padding:0.15rem 0.4rem">↑</button>
+            </form>
+            <span id="gw-msg-{{ e.id }}" style="font-size:0.72rem"></span>
+          </td>
+          <td>
+            {% if e.involved_zone_id %}
+            <a href="/world/{{ e.involved_zone_id }}" style="font-size:0.8rem">{{ e.involved_zone_id }}</a>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% for nid in e.involved_npc_ids %}
+            <a href="/npc/{{ nid }}" style="font-size:0.8rem">{{ nid }}</a><br>
+            {% endfor %}
+          </td>
+          <td>
+            {% for t in e.topic_tags %}
+            <a href="/knowledge/?tag={{ t }}">
+              <span class="badge badge-tag">{{ t }}</span>
+            </a>
+            {% endfor %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">No entries{% if tag_filter %} matching tag "{{ tag_filter }}"{% endif %}.</p>
+    {% endif %}
+  </main>
+
+</div>
+{% endblock %}
