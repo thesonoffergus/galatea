@@ -1,0 +1,52 @@
+[gd_scene load_steps=2 format=3 uid="uid://galatea_dialogue"]
+
+[ext_resource type="Script" path="res://scripts/ui/dialogue_ui.gd" id="1_dlg"]
+
+[node name="DialogueUI" type="CanvasLayer"]
+script = ExtResource("1_dlg")
+layer = 10
+
+[node name="TypewriterTimer" type="Timer" parent="."]
+wait_time = 0.03
+one_shot = false
+
+[node name="DialoguePanel" type="PanelContainer" parent="."]
+offset_left = 20.0
+offset_top = 480.0
+offset_right = 1260.0
+offset_bottom = 700.0
+
+[node name="VBox" type="VBoxContainer" parent="DialoguePanel"]
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 1224.0
+offset_bottom = 204.0
+
+[node name="NPCName" type="Label" parent="DialoguePanel/VBox"]
+theme_override_font_sizes/font_size = 18
+
+[node name="ResponseText" type="RichTextLabel" parent="DialoguePanel/VBox"]
+custom_minimum_size = Vector2(0, 80)
+bbcode_enabled = true
+scroll_active = false
+
+[node name="MenuOptions" type="VBoxContainer" parent="DialoguePanel/VBox"]
+custom_minimum_size = Vector2(0, 20)
+
+[node name="InputRow" type="HBoxContainer" parent="DialoguePanel/VBox"]
+
+[node name="FreeformInput" type="LineEdit" parent="DialoguePanel/VBox/InputRow"]
+size_flags_horizontal = 3
+placeholder_text = "Say something..."
+
+[node name="SendButton" type="Button" parent="DialoguePanel/VBox/InputRow"]
+text = "Send"
+
+[node name="CloseButton" type="Button" parent="DialoguePanel"]
+anchor_left = 1.0
+anchor_top = 0.0
+offset_left = -30.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = 28.0
+text = "X"

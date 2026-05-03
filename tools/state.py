@@ -67,5 +67,9 @@ def get_state() -> AppState:
 
 def reload_state(seed_path: Path | None = None) -> AppState:
     global _state
+    from events.log import event_log
+    from sim.tick import reset_tick_count
     _state = AppState.load(seed_path or DEFAULT_SEED)
+    event_log.clear()
+    reset_tick_count()
     return _state

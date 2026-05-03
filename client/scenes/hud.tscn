@@ -1,0 +1,29 @@
+[gd_scene load_steps=2 format=3 uid="uid://galatea_hud"]
+
+[ext_resource type="Script" path="res://scripts/ui/hud.gd" id="1_hud"]
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+layer = 5
+
+[node name="TopLeft" type="VBoxContainer" parent="."]
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 300.0
+offset_bottom = 40.0
+
+[node name="ZoneName" type="Label" parent="TopLeft"]
+theme_override_font_sizes/font_size = 16
+text = "..."
+
+[node name="TopRight" type="HBoxContainer" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -280.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 36.0
+
+[node name="TimeLabel" type="Label" parent="TopRight"]
+theme_override_font_sizes/font_size = 14
+text = "Day 1  06:00  (morning)"

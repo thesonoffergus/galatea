@@ -1,0 +1,42 @@
+[gd_scene load_steps=6 format=3 uid="uid://galatea_main"]
+
+[ext_resource type="Script" path="res://scripts/world/world_manager.gd" id="1_wm"]
+[ext_resource type="Script" path="res://scripts/world/npc_controller.gd" id="2_npc"]
+[ext_resource type="PackedScene" path="res://scenes/dialogue_ui.tscn" id="3_dlg"]
+[ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="4_hud"]
+[ext_resource type="Script" path="res://scripts/ui/action_menu.gd" id="5_actions"]
+
+[node name="Main" type="Node2D"]
+
+[node name="WorldManager" type="Node2D" parent="."]
+script = ExtResource("1_wm")
+
+[node name="NPCController" type="Node" parent="WorldManager"]
+script = ExtResource("2_npc")
+
+[node name="DialogueUI" parent="." instance=ExtResource("3_dlg")]
+
+[node name="HUD" parent="." instance=ExtResource("4_hud")]
+
+[node name="ActionMenu" type="CanvasLayer" parent="."]
+layer = 8
+
+[node name="ActionPanel" type="PanelContainer" parent="ActionMenu"]
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 0.1
+anchor_bottom = 0.9
+offset_left = -200.0
+offset_right = 200.0
+
+[node name="VBox" type="VBoxContainer" parent="ActionMenu/ActionPanel"]
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 384.0
+offset_bottom = 560.0
+
+[node name="ActionList" type="VBoxContainer" parent="ActionMenu/ActionPanel/VBox"]
+size_flags_vertical = 3
+
+[node name="CloseButton" type="Button" parent="ActionMenu/ActionPanel/VBox"]
+text = "Close"

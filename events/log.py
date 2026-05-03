@@ -169,6 +169,10 @@ class EventLog:
     def since(self, ts: datetime) -> list[EventEntry]:
         return [e for e in self._entries if e.timestamp >= ts]
 
+    def clear(self) -> None:
+        """Discard all entries (used by reload_state)."""
+        self._entries.clear()
+
     def __len__(self) -> int:
         return len(self._entries)
 

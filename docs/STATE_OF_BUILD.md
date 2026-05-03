@@ -24,7 +24,7 @@ _Status snapshot as of build-order step 15 (complete). 318 passing tests._
 | **Memory store** (`knowledge/`) | `IndividualMemory` with salience-based eviction (heap), tier-governed capacity. `CommunityKB`. `MemoryStore` registry. YAML loader. |
 | **RAG retrieval** (`knowledge/retrieval.py`) | Scored retrieval for individual + community entries. Scoring: `tag_overlap + npc_overlap*2 + salience*1.5 + recency_decay + zone_bonus`. |
 | **Tier system** (`npc/tier.py`) | `compute_reach_score()`, `promote()`, `demote()`, `force_tier()`, LLM history compression with fallback. All thresholds read from `config.settings.tier`. |
-| **Event log** (`events/log.py`) | Ring buffer (max 2 000), all filter methods, `emit()` convenience wrapper. |
+| **Event log** (`events/log.py`) | Ring buffer (max 2 000), all filter methods, `emit()` convenience wrapper, `clear()` method for resets. |
 | **Director stub** (`director/`) | Wired into tick, reads recent events, applies nothing — intentional stub. |
 | **Amplification primitives** (`director/amplify.py`) | `set_memory_salience`, `boost_kb_entry`, `nudge_goal`, `clear_nudged_goals` — all implemented and exposed via dev-tool routes. |
 | **GOAP-lite** (`sim/goap.py`) | Keyword-token scoring against active goals. `planned_actions` chain respected first. Stochastic fallback when no goal match. |
@@ -32,12 +32,15 @@ _Status snapshot as of build-order step 15 (complete). 318 passing tests._
 | **Tick system** (`sim/tick.py`) | T0 skip, T1 stochastic (configurable probability), T2+ always. Gossip phase. Relationship drift. Event emission. Director hook. All tick params from `config.settings.sim`. |
 | **Developer UI** (`tools/`) | FastAPI + HTMX + Jinja2 + Pico CSS dark theme. All 11 route groups registered and functional. |
 | **Config** (`config.py`) | `TierConfig`, `SimConfig`, `LLMConfig`, `TimeConfig`, `CraftingConfig` all wired to consuming modules. |
+| **WebSocket server** (`server/`) | asyncio + websockets; single-client mode; full message protocol (connect, move, interact, dialogue, tick, affordances, action). StubRunner on by default. `python -m server` entry point with CLI args. `test_client.py` bridge validator included. |
+| **Godot client skeleton** (`client/`) | Godot 4.3 project. Scenes: main, world, player, NPC, dialogue UI, HUD. Scripts: `GameBridge` WebSocket autoload, `GameState` cache, `WorldManager`, `ZoneRenderer`, `NpcController`, `PlayerController`, `DialogueUI`, `HUD`, `ActionMenu`. Input actions wired. Colored-rect rendering (no image assets). |
 
 ### Works but fragile or shallow
 
 | Component | Fragility |
 |-----------|-----------|
 | **Dialogue route** (`tools/routes/dialogue.py`) | Session stored in module-level dict keyed by NPC id. Two simultaneous users hitting the same NPC would corrupt each other's session. Acceptable for single-user dev tool; not for production. |
+| **NPC interaction area detection** (`client/scripts/world/zone_renderer.gd`) | NPC body-entered signals can't easily bubble up to `WorldManager` through the instanced scene boundary, so the implementation uses `propagate_call()` as a workaround to invoke handlers on the parent. Functional but brittle — breaks if scene hierarchy changes. |
 | **LLM factory** (`llm/factory.py`) | `get_runner()` constructs from `config.settings.llm.default_runner`. Only "ollama" is supported; any other value throws. No retry or circuit-breaker. |
 | **Ollama adapter** (`llm/ollama_runner.py`) | Synchronous HTTP calls via the `ollama` Python SDK. Long generation blocks the event loop for async routes. Works in practice for the single-user dev tool. |
 | **Gossip propagation** | The `_maybe_gossip()` logic in `sim/tick.py` uses the module-level `event_log` directly (not injected), and the `GOSSIP_PROBABILITY` check happens independently per NPC per tick — there's no global cap on how much gossip floods the KB per tick. |
@@ -64,13 +67,17 @@ _Status snapshot as of build-order step 15 (complete). 318 passing tests._
 
 3. **Off-screen skill advancement is unbounded in practice** — `AdvancesSkillEffect` is capped at 1.0 per execution, but nothing prevents an NPC from practicing the same skill every tick until capped. There's no diminishing-returns or time-gate.
 
-4. **`NPC.as_actor_context()` ignores `graph` parameter** — the method signature accepts `graph` but the implementation doesn't use it to derive inventory from `carried_item_ids`. Inventory in `ActorContext` is always an empty dict unless explicitly set. This means `ActorHasItemPrecondition` always fails for any NPC in GOAP evaluation.
+4. **`WorldGraph.npc_location()` is O(zones)** — scans every zone's `npc_ids` list. Fine at current scale; will degrade with hundreds of zones.
 
-5. **`WorldGraph.npc_location()` is O(zones)** — scans every zone's `npc_ids` list. Fine at current scale; will degrade with hundreds of zones.
+5. **No validation that NPC's `current_zone_id` matches `WorldGraph` placement** — they can drift out of sync if only one is updated.
 
-6. **No validation that NPC's `current_zone_id` matches `WorldGraph` placement** — they can drift out of sync if only one is updated.
+6. **`reload_state()` does not reset the event log or tick counter** — FIXED. `reload_state()` now calls `event_log.clear()` and `reset_tick_count()` after loading state, so reloads start with a clean slate.
 
-7. **`reload_state()` does not reset the event log or tick counter** — reloading the seed leaves stale events and tick numbers from before the reload.
+7. **No actual art assets** — the Godot client uses colored rectangles for all NPC and terrain rendering. Zone terrain colors are defined in `zone_renderer.gd`; no sprite sheets or tilesets exist yet.
+
+8. **Server is single-client only** — `python -m server` accepts one WebSocket connection at a time. A second client connecting will wait until the first disconnects.
+
+9. **Dialogue sessions in the server are in-memory** — `server/handlers.py` holds active `DialogueSession` objects in a dict keyed by NPC id. Sessions are lost on disconnect or server restart. There is no persistence or handoff mechanism.
 
 ---
 
@@ -123,3 +130,4 @@ When the LLM fails during demotion compression, the fallback is deterministic an
 | 18 | Persistence (SQLite) | ❌ Not started | Everything is in-memory; seed YAML reloads on server restart |
 | 19 | Build order | ✅ Steps 1–15 | All build-order steps complete |
 | 20 | How to proceed | — | Process guidance only |
+| Phase 0 | WebSocket bridge + Godot client | 🔄 Skeleton complete | Full message protocol implemented; scenes and scripts in place; end-to-end test with a running Godot editor instance pending |

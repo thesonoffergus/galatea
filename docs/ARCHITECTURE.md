@@ -20,8 +20,12 @@ galatea/
 ├── director/               # Director stub (passive), amplification primitives
 ├── sim/                    # GOAP-lite action selection, action executor, tick system
 ├── time/                   # Stub package — tick scheduling utilities (not yet implemented)
-└── tools/                  # FastAPI + HTMX developer UI: AppState singleton, all route handlers
+├── tools/                  # FastAPI + HTMX developer UI: AppState singleton, all route handlers
+├── server/                 # WebSocket server (asyncio + websockets): protocol handlers, serializers
+└── client/                 # Godot 4 project (not a Python module — see §1 note below)
 ```
+
+> **`client/`** is a Godot 4.3 project (GDScript). It lives alongside the Python packages for repository convenience but is not imported by any Python code. See section 1 (module descriptions) and section 4 (dependency graph) for its relationship to `server/`.
 
 ### One-sentence descriptions
 
@@ -40,6 +44,8 @@ galatea/
 | `sim` | `select_action()` (GOAP-lite scoring); `execute_action()` applies effects to world graph; `tick()` runs one simulation step for all NPCs |
 | `time` | Empty stub package; reserved for tick-scheduling utilities |
 | `tools` | FastAPI dev server with HTMX UI; `AppState` loads and holds all singletons; route modules for world, NPC, DAG, dialogue, KB, events, tier, amplify, tick stepper |
+| `server` | asyncio WebSocket server (websockets library); single-client mode; `handlers.py` dispatches each message type; `serializers.py` converts Python objects to JSON; `__main__.py` is the entry point (`python -m server`) |
+| `client` | Godot 4.3 project — GDScript autoloads (`GameBridge`, `GameState`), scene files (main, world, player, NPC, dialogue UI, HUD), and input action definitions. Connects to `server` via WebSocket. Not a Python package. |
 
 ---
 
@@ -443,7 +449,7 @@ REL_DRIFT_MAGNITUDE     # from config.settings.sim
 ```python
 # tools/state.py
 get_state() -> AppState         # returns or creates module-level singleton
-reload_state(seed_path?) -> AppState
+reload_state(seed_path?) -> AppState  # also calls event_log.clear() and reset_tick_count()
 
 @dataclass AppState:
     graph: WorldGraph
@@ -454,6 +460,31 @@ reload_state(seed_path?) -> AppState
     memory_store: MemoryStore
     seed_path: Path
     .load(seed_path?) -> AppState   # classmethod; loads world + NPCs + memories
+```
+
+### `server`
+```python
+# server/__main__.py  (entry point: python -m server)
+# CLI args: --port 8765  --seed PATH  --stub / --no-stub  --auto-tick  --tick-interval SECONDS
+# Starts a single-client asyncio WebSocket server; blocks until interrupted.
+
+# server/handlers.py  (one coroutine per client→server message type)
+handle_connect(payload, state) -> dict
+handle_player_move(payload, state) -> dict
+handle_player_interact(payload, state) -> dict
+handle_dialogue_input(payload, state, sessions) -> dict
+handle_dialogue_end(payload, sessions) -> dict
+handle_get_affordances(payload, state) -> dict
+handle_execute_action(payload, state) -> dict
+handle_tick(payload, state) -> dict
+
+# server/serializers.py
+serialize_full_state(state) -> dict
+serialize_zone(zone, graph) -> dict
+serialize_npc(npc) -> dict
+serialize_player(npc) -> dict
+serialize_tick_result(result) -> dict
+_game_time() -> dict   # {"day": int, "hour": int, "period": str}
 ```
 
 ---
@@ -473,11 +504,15 @@ director        → knowledge, npc
 dialogue        → affordances, npc, llm, config
 sim             → affordances, npc, knowledge, events, director, world, config
 npc/tier        → config, knowledge, llm, npc
-tools/state     → world, affordances, crafting, npc, knowledge
+tools/state     → world, affordances, crafting, npc, knowledge, events, sim
 tools/routes/*  → tools/state, plus relevant domain modules
+server          → tools.state, llm.factory, dialogue.engine, dialogue.prompt_builder,
+                  knowledge.retrieval, sim.tick, events.log, npc.schema,
+                  affordances.query, sim.action_executor
+client          → server (WebSocket over network — no Python import relationship)
 ```
 
-Cycle-free. `config` and `events` are leaves with no internal imports.
+Cycle-free. `config` and `events` are leaves with no internal imports. `client` is a Godot project and has no Python import relationship; its only coupling to the Python codebase is the WebSocket protocol spoken by `server`.
 
 ---
 
@@ -523,3 +558,12 @@ Cycle-free. `config` and `events` are leaves with no internal imports.
 ### D10 — No SQLite persistence
 **Spec §18 (persistence):** SQLModel + SQLite mentioned.
 **Implemented:** Everything is in-memory. `AppState.load()` reconstructs from YAML on every server start. Persistence is not started.
+
+### D11 — WebSocket server is single-client, not multi-user
+**Rationale:** Galatea's `AppState` is a single shared Python object with no locking. Allowing concurrent WebSocket clients would cause race conditions on world state. The server accepts one connection at a time and closes it cleanly before accepting the next. Multi-user support would require per-session state isolation, which is out of scope for the current build.
+
+### D12 — Godot client uses zone-based screen transitions, not a continuous tilemap
+**Rationale:** The world model is a graph of named zones, not a 2-D coordinate grid. Rendering it as a continuous scrolling tilemap would require faking spatial coordinates that don't exist in the data model. Instead each zone is a discrete screen (rendered by `ZoneRenderer`); moving between zones triggers a full scene swap. This keeps the client's view of the world consistent with the server's.
+
+### D13 — `StubRunner` is the default in `python -m server`; `--no-stub` opts into Ollama
+**Rationale:** Requiring a running Ollama instance blocks iteration on the client and protocol. The server defaults to `StubRunner` so the Godot client can complete the full round-trip (connect → move → interact → dialogue → tick) without any LLM infrastructure. Pass `--no-stub` (or set `--no-stub` in `run_dev.sh`) to enable live LLM responses.

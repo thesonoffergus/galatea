@@ -63,9 +63,44 @@ settings.llm.dialogue_max_tokens = 200
 
 ---
 
+## 11. Starting the WebSocket Server
+
+```bash
+python -m server [--port 8765] [--seed PATH] [--stub | --no-stub] [--auto-tick] [--tick-interval SECONDS]
+```
+
+| Flag | Default | Effect |
+|------|---------|--------|
+| `--port` | `8765` | TCP port to listen on |
+| `--seed` | `data/village_seed.yaml` | Seed YAML passed to `AppState.load()` |
+| `--stub` | on | Use `StubRunner` (no Ollama required) |
+| `--no-stub` | — | Use `OllamaRunner` from `config.settings.llm` |
+| `--auto-tick` | off | Automatically advance simulation one tick per `--tick-interval` seconds |
+| `--tick-interval` | `5.0` | Seconds between auto-ticks (only relevant with `--auto-tick`) |
+
+The server accepts **one WebSocket client at a time**. A second connection attempt is held until the first client disconnects.
+
+### Quick start for development (without Ollama)
+
+```bash
+./run_dev.sh          # Linux/macOS: starts server in background, prints instructions
+run_dev.bat           # Windows equivalent
+# Then open client/project.godot in Godot 4.3 and press Play
+```
+
+To run the server standalone without the shell wrapper:
+
+```bash
+./run_server.sh
+# or:
+python -m server --port 8765 --stub
+```
+
+---
+
 ## 2. Querying World State
 
-All queries operate on Python objects directly — there is no query language.
+All queries below operate on Python objects directly — there is no query language. A WebSocket API for the same data (via the `full_state` message) is also available; see sections 11–13 for the network protocol.
 
 ```python
 from tools.state import get_state
@@ -213,7 +248,7 @@ actor = player.as_actor_context()
 #   actor_id: str
 #   skills: dict[str, float]
 #   known_recipes: set[str]
-#   inventory: dict[str, int]   ← NOTE: currently always empty (see STATE_OF_BUILD §2, bug #4)
+#   inventory: dict[str, int]   ← populated from carried_item_ids via graph lookup
 #   role_tags: set[str]
 
 actions = what_can_actor_do(
@@ -437,3 +472,95 @@ Dialogue turn:
 All data in memory as Python objects.
 No serialization layer exists (JSON/protobuf/etc.) — not needed until persistence or network transport is added.
 ```
+
+---
+
+## 12. WebSocket Message Protocol
+
+All messages are JSON objects with a `"type"` field. The server sends a response message for each request; some server messages are pushed without a prior client request.
+
+### Client → Server
+
+| `type` | Required fields | Description |
+|--------|-----------------|-------------|
+| `connect` | _(none)_ | First message after connection; triggers `full_state` response |
+| `player_move` | `zone_id: str` | Move player to the named zone |
+| `player_interact` | `npc_id: str` | Begin interaction with an NPC (does not start dialogue) |
+| `dialogue_input` | `npc_id: str`, `text: str` | Send a player utterance to an active dialogue session |
+| `dialogue_end` | `npc_id: str` | Close the dialogue session for this NPC |
+| `get_affordances` | _(none)_ | Request the list of actions available to the player |
+| `execute_action` | `action_id: str` | Execute a specific action as the player |
+| `tick` | _(none)_ | Advance the simulation by one tick |
+
+### Server → Client (responses)
+
+| `type` | Sent in response to | Key fields |
+|--------|---------------------|------------|
+| `full_state` | `connect` | `zones`, `npcs`, `player`, `time` (see §13) |
+| `move_result` | `player_move` | `success: bool`, `zone_id: str`, `error?: str` |
+| `dialogue_start` | `player_interact` | `npc_id: str`, `npc_name: str` |
+| `dialogue_response` | `dialogue_input` | `npc_id: str`, `text: str`, `menu_options: list[str]` |
+| `dialogue_ended` | `dialogue_end` | `npc_id: str` |
+| `affordance_list` | `get_affordances` | `actions: list[{id, name, category}]` |
+| `action_result` | `execute_action` | `success: bool`, `action_id: str`, `produced: list[str]`, `consumed: list[str]`, `moved_to?: str` |
+| `tick_result` | `tick` | `tick_number: int`, `actions_taken: int`, `npc_results: list[…]` |
+| `error` | any | `message: str` |
+
+### Server → Client (push, unsolicited)
+
+| `type` | Trigger | Key fields |
+|--------|---------|------------|
+| `npc_moved` | NPC changes zone during a tick | `npc_id: str`, `from_zone: str`, `to_zone: str` |
+| `world_event` | Significant event emitted to `event_log` | `event_type: str`, `description: str`, `severity: str` |
+| `time_update` | Tick advances game time | `day: int`, `hour: int`, `period: str` |
+
+---
+
+## 13. `full_state` Payload Shape
+
+The `full_state` message is the canonical snapshot sent on connect (and can be re-requested). Its `data` object has the following shape:
+
+```json
+{
+  "type": "full_state",
+  "data": {
+    "zones": [
+      {
+        "id": "zone_uuid",
+        "name": "The Forge",
+        "description": "...",
+        "terrain_type": "STRUCTURE",
+        "tags": ["forge", "fire"],
+        "connections": ["zone_uuid_2"],
+        "npc_ids": ["npc_uuid"],
+        "item_ids": ["item_uuid"]
+      }
+    ],
+    "npcs": [
+      {
+        "id": "npc_uuid",
+        "name": "Aldric",
+        "role": "blacksmith",
+        "tier": 2,
+        "current_zone_id": "zone_uuid",
+        "mood": 0.3,
+        "is_player": false
+      }
+    ],
+    "player": {
+      "id": "player_uuid",
+      "name": "Player",
+      "current_zone_id": "zone_uuid",
+      "skills": {"smithing": 0.4},
+      "carried_item_ids": []
+    },
+    "time": {
+      "day": 1,
+      "hour": 9,
+      "period": "morning"
+    }
+  }
+}
+```
+
+`zones[].connections` lists zone IDs reachable via `CONNECTS` edges (i.e. traversable exits). The `npcs` array excludes the player entry; the player is always under the top-level `player` key.
